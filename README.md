@@ -41,6 +41,36 @@
 - Spring Boot 4.0.0
 - Maven 4.0.0
 
+## 如何启动数据库配置，快速开始项目
+
+首先，大家尽量下载同一个版本的数据库，我这里使用的是PostgreSQL 18版本。但是版本不同也没事
+应该是不会出现什么问题的。因为我们用的都是一些比较基础的功能。
+
+下载好数据库之后，会有一个默认用户postgres，为这个用户设置密码123456。
+
+首先如果是之前安装的时候可以给用户输入密码，就输入。如果已经过了，那么就打开POWERSHELL，输入
+`psql -U postgres`回车登陆postgres之后直接
+
+```sql
+ALTER USER postgres WITH PASSWORD '123456';
+```
+
+然后创建一个名为`registration_system`的数据库
+
+```sql
+REATE DATABASE registration_system;
+```
+
+然后回到powershell下执行
+
+```powershell
+psql -U postgres -d registration_system -f "src/main/resources/db/init.sql"
+```
+
+就完成了数据库初始化。最后在你的idea中链接数据库就可以了。
+
+![](./resources/img/idea数据库链接.png)
+
 # 实现效果
 
 > 最后希望实现的效果，在这里我稍微阐述下我的想法：（我觉得我们应该照着靶子射箭，也就是
@@ -207,7 +237,7 @@ CREATE TYPE gender_enum AS ENUM ('male', 'female');
 
 # todolist
 - [x]  init.sql
-- [ ] 初始化，添加依赖
+- [x] 初始化，添加依赖
 - 配置application.yml
 - 实体类
 - 接口
