@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <title>简易登录测试</title>
+</head>
+<body>
+<h2>登录测试页</h2>
+<form id="loginForm">
+    <label>用户名: <input type="text" name="username" value="admin" /></label><br/>
+    <label>密码: <input type="password" name="password" value="123456" /></label><br/>
+    <button type="submit">登录</button>
+</form>
+<pre id="result"></pre>
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const payload = {
+            username: form.username.value,
+            password: form.password.value
+        };
+        try {
+            const resp = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!resp.ok) {
+                const text = await resp.text();
+                document.getElementById('result').textContent = '登录失败: ' + text;
+                return;
+            }
+            const data = await resp.json();
+            document.getElementById('result').textContent = '登录成功!\n用户ID: ' + data.userId + '\n用户名: ' + data.username + '\n角色: ' + data.role + '\n\nHello ' + data.role + '!';
+        } catch (err) {
+            document.getElementById('result').textContent = '请求异常: ' + err.message;
+        }
+    });
+</script>
+</body>
+</html>
+

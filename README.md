@@ -69,7 +69,7 @@ psql -U postgres -d registration_system -f "src/main/resources/db/init.sql"
 
 就完成了数据库初始化。最后在你的idea中链接数据库就可以了。
 
-![](./resources/img/idea数据库链接.png)
+![idea数据库链接](./resources/img/idea数据库链接.png)
 
 # 实现效果
 
@@ -208,7 +208,7 @@ UNIQUE (doctor_user_id, department_id)
 CREATE TYPE gender_enum AS ENUM ('male', 'female');
 
 ![ER图](./resources/img/ER图-test.png)
-请大家为我补充
+数据库结构应该是不会再改动的了，请同学帮助我修改一下ER图，谢谢！
 
 # 项目结构
 
@@ -235,10 +235,20 @@ CREATE TYPE gender_enum AS ENUM ('male', 'female');
 │                   └── application.properties
 ```
 
+# 最新进展
+
+我们实现了实体类，并且使用枚举类型规范类型。这里需要注意，因为我们这里使用的是枚举类型。所以数据库中的字符串值就应该是和枚举名一致才可以。
+
+- Role：PATIENT/DOCTOR/ADMIN（大写）
+- Gender：male/female（我按你的库定义，特意使用了小写枚举名，确保与 PostgreSQL gender_enum 一致）
+- TimeSlot：AM1…PM4（大写）
+
+按照最小分支来说entity分支到这里就应该结束了，但是我为了知道这个分支是可用的，所以这里会写一个登陆界面尝试验证。
+
 # todolist
 - [x]  init.sql
 - [x] 初始化，添加依赖
-- 配置application.yml
-- 实体类
+- [x] 配置application.yml
+- [x] 实体类
 - 接口
 - 统一登陆
