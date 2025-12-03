@@ -1,13 +1,74 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <title>医生首页</title>
+  <meta charset="UTF-8" />
+  <title>医生工作台</title>
 </head>
 <body>
-  <h1>Hello, DOCTOR</h1>
-  <p>这里是医生的占位页面，后续可接入医生的待办与排班视图。</p>
-  <p><a href="/login.html">返回登录</a></p>
+  <h1>医生工作台 - 当日排班查询</h1>
+
+  <div>
+    <label>选择工作日：</label>
+    <select id="weekday">
+      <option value="1">周一</option>
+      <option value="2">周二</option>
+      <option value="3">周三</option>
+      <option value="4">周四</option>
+      <option value="5">周五</option>
+    </select>
+  </div>
+  <button id="query">查询</button>
+
+  <h2>当日日程（按时段）</h2>
+  <div id="list"></div>
+
+  <script>
+    // 登录页写入 sessionStorage 的登录信息
+    const authInfo = (() => {
+      try {
+        return JSON.parse(sessionStorage.getItem('authInfo') || '{}');
+      } catch (e) {
+        return {};
+      }
+    })();
+
+    if (!authInfo.doctorId || (authInfo.role || '').toUpperCase() !== 'DOCTOR') {
+      alert('请先使用医生账号登录');
+      window.location.href = '/login.html';
+    }
+
+    const weekdaySelect = document.getElementById('weekday');
+    const queryBtn = document.getElementById('query');
+    const listDiv = document.getElementById('list');
+
+    function render(items) {
+      if (!Array.isArray(items) || items.length === 0) {
+        listDiv.innerHTML = '<p>暂无安排</p>';
+        return;
+      }
+      const html = items.map(it => {
+        return `<div style="padding:6px;border:1px solid #ccc;margin:6px 0;">
+          <div><b>时段</b>：${it.timeslot}</div>
+          <div><b>患者姓名</b>：${it.patientName}</div>
+          <div><b>身份证</b>：${it.patientIdCard}</div>
+          <div><b>手机号</b>：${it.patientPhone}</div>
+          <div><b>年龄</b>：${it.patientAge ?? ''}</div>
+          <div><b>性别</b>：${it.patientGender}</div>
+        </div>`;
+      }).join('');
+      listDiv.innerHTML = html;
+    }
+
+    queryBtn.addEventListener('click', async () => {
+      const weekday = Number(weekdaySelect.value);
+      try {
+        const resp = await fetch(`/api/doctor/schedule?doctorId=${encodeURIComponent(authInfo.doctorId)}&weekday=${weekday}`);
+        const data = await resp.json();
+        render(data);
+      } catch (e) {
+        listDiv.textContent = '请求失败：' + e;
+      }
+    });
+  </script>
 </body>
 </html>
-
