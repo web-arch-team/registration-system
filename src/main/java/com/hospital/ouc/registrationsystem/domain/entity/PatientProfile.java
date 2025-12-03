@@ -59,4 +59,10 @@ public class PatientProfile {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private Gender gender; // male | female
+
+    /**
+     * 是否有效（软删除标记）。删除时不物理删除，而是将该字段设为 false。
+     */
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 }

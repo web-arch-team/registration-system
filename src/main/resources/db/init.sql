@@ -30,65 +30,68 @@ CREATE TYPE time_slot AS ENUM (
 -- User Table (Unified Login Table)
 -- ==========================================
 CREATE TABLE app_user (
-                          id SERIAL PRIMARY KEY,
-                          username VARCHAR(100) UNIQUE NOT NULL,
-                          password VARCHAR(255) NOT NULL,
-                          role VARCHAR(20) NOT NULL,     -- 'PATIENT' / 'DOCTOR' / 'ADMIN'
-                          created_at TIMESTAMP DEFAULT NOW()
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL,     -- 'PATIENT' / 'DOCTOR' / 'ADMIN'
+    created_at TIMESTAMP DEFAULT NOW(),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- ==========================================
 -- Department Table
 -- ==========================================
 CREATE TABLE department (
-                            id SERIAL PRIMARY KEY,
-                            department_name VARCHAR(100) NOT NULL
+    id SERIAL PRIMARY KEY,
+    department_name VARCHAR(100) NOT NULL
 );
 
 -- Insert basic departments
 INSERT INTO department (department_name) VALUES
-                                             ('Internal Medicine'),
-                                             ('Surgical');
+    ('Internal Medicine'),
+    ('Surgical');
 
 -- ==========================================
 -- Patient Profile
 -- ==========================================
 CREATE TABLE patient_profile (
-                                 id SERIAL PRIMARY KEY,
-                                 user_id INT UNIQUE NOT NULL REFERENCES app_user(id),
+    id SERIAL PRIMARY KEY,
+    user_id INT UNIQUE NOT NULL REFERENCES app_user(id),
 
-                                 id_card VARCHAR(18) UNIQUE NOT NULL,
-                                 name VARCHAR(100) NOT NULL,
-                                 phone_number VARCHAR(15) NOT NULL UNIQUE,
-                                 age INT,
-                                 gender gender_enum NOT NULL
+    id_card VARCHAR(18) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    phone_number VARCHAR(15) NOT NULL UNIQUE,
+    age INT,
+    gender gender_enum NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- ==========================================
 -- Doctor Profile
 -- ==========================================
 CREATE TABLE doctor_profile (
-                                id SERIAL PRIMARY KEY,
-                                user_id INT UNIQUE NOT NULL REFERENCES app_user(id),
+    id SERIAL PRIMARY KEY,
+    user_id INT UNIQUE NOT NULL REFERENCES app_user(id),
 
-                                doctor_id VARCHAR(10) UNIQUE NOT NULL,
-                                name VARCHAR(100) NOT NULL,
-                                age INT,
-                                gender gender_enum NOT NULL,
-                                title VARCHAR(100),
+    doctor_id VARCHAR(10) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    age INT,
+    gender gender_enum NOT NULL,
+    title VARCHAR(100),
 
-                                department_id INT REFERENCES department(id)
+    department_id INT REFERENCES department(id),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- ==========================================
 -- Disease Table
 -- ==========================================
 CREATE TABLE disease (
-                         id SERIAL PRIMARY KEY,
-                         name VARCHAR(100) NOT NULL,
-                         code VARCHAR(50) UNIQUE,
-                         description TEXT,
-                         department_id INT NOT NULL REFERENCES department(id)
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    code VARCHAR(50) UNIQUE,
+    description TEXT,
+    department_id INT NOT NULL REFERENCES department(id)
 );
 
 -- Insert sample diseases for departments
@@ -112,45 +115,45 @@ INSERT INTO disease (name, code, description, department_id) VALUES
 -- Doctor-Disease Relation Table
 -- ==========================================
 CREATE TABLE doctor_disease (
-                                id SERIAL PRIMARY KEY,
-                                doctor_profile_id INT NOT NULL REFERENCES doctor_profile(id),
-                                disease_id INT NOT NULL REFERENCES disease(id),
-                                UNIQUE (doctor_profile_id, disease_id)
+    id SERIAL PRIMARY KEY,
+    doctor_profile_id INT NOT NULL REFERENCES doctor_profile(id),
+    disease_id INT NOT NULL REFERENCES disease(id),
+    UNIQUE (doctor_profile_id, disease_id)
 );
 
 -- ==========================================
 -- Registration Table (by Disease)
 -- ==========================================
 CREATE TABLE patient_doctor_registration (
-                                             id SERIAL PRIMARY KEY,
-                                             patient_profile_id INT REFERENCES patient_profile(id),
-                                             doctor_profile_id INT REFERENCES doctor_profile(id),
-                                             disease_id INT REFERENCES disease(id),
+    id SERIAL PRIMARY KEY,
+    patient_profile_id INT REFERENCES patient_profile(id),
+    doctor_profile_id INT REFERENCES doctor_profile(id),
+    disease_id INT REFERENCES disease(id),
 
-                                             weekday INT NOT NULL CHECK (weekday BETWEEN 1 AND 5),
-                                             timeslot time_slot NOT NULL,
-                                             registration_time TIMESTAMP NOT NULL DEFAULT NOW(),
-                                             status VARCHAR(20) NOT NULL
+    weekday INT NOT NULL CHECK (weekday BETWEEN 1 AND 5),
+    timeslot time_slot NOT NULL,
+    registration_time TIMESTAMP NOT NULL DEFAULT NOW(),
+    status VARCHAR(20) NOT NULL
 );
 
 -- ==========================================
 -- Doctor Department Schedule
 -- ==========================================
 CREATE TABLE doctor_department_schedule (
-                                            id SERIAL PRIMARY KEY,
-                                            doctor_profile_id INT REFERENCES doctor_profile(id),
-                                            department_id INT REFERENCES department(id),
-                                            weekday INT NOT NULL CHECK (weekday BETWEEN 1 AND 5),
-                                            timeslot time_slot NOT NULL,
+    id SERIAL PRIMARY KEY,
+    doctor_profile_id INT REFERENCES doctor_profile(id),
+    department_id INT REFERENCES department(id),
+    weekday INT NOT NULL CHECK (weekday BETWEEN 1 AND 5),
+    timeslot time_slot NOT NULL,
 
-                                            UNIQUE (doctor_profile_id, weekday, timeslot)
+    UNIQUE (doctor_profile_id, weekday, timeslot)
 );
 
 -- ==========================================
 -- Insert Example Data
 -- ==========================================
 
--- Enable pgcrypto for hashing
+-- Enable pgcrypto for hashing (sha256 with salt)
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ADMIN account
@@ -166,39 +169,39 @@ INSERT INTO app_user (username, password, role)
 VALUES ('patient001', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'PATIENT');
 INSERT INTO patient_profile (user_id, id_card, name, phone_number, age, gender)
 VALUES (
-           (SELECT id FROM app_user WHERE username='patient001'),
-           '110101200001015555',
-           'Alice Zhang',
-           '13800000001',
-           23,
-           'female'
-       );
+    (SELECT id FROM app_user WHERE username='patient001'),
+    '110101200001015555',
+    'Alice Zhang',
+    '13800000001',
+    23,
+    'female'
+);
 
 -- Patient 2
 INSERT INTO app_user (username, password, role)
 VALUES ('patient002', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'PATIENT');
 INSERT INTO patient_profile (user_id, id_card, name, phone_number, age, gender)
 VALUES (
-           (SELECT id FROM app_user WHERE username='patient002'),
-           '110101199905203333',
-           'Bob Li',
-           '13800000002',
-           25,
-           'male'
-       );
+    (SELECT id FROM app_user WHERE username='patient002'),
+    '110101199905203333',
+    'Bob Li',
+    '13800000002',
+    25,
+    'male'
+);
 
 -- Patient 3
 INSERT INTO app_user (username, password, role)
 VALUES ('patient003', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'PATIENT');
 INSERT INTO patient_profile (user_id, id_card, name, phone_number, age, gender)
 VALUES (
-           (SELECT id FROM app_user WHERE username='patient003'),
-           '110101199802105666',
-           'Charlie Wang',
-           '13800000003',
-           26,
-           'male'
-       );
+    (SELECT id FROM app_user WHERE username='patient003'),
+    '110101199802105666',
+    'Charlie Wang',
+    '13800000003',
+    26,
+    'male'
+);
 
 -- ==========================================
 -- DOCTORS (3 examples)
@@ -209,52 +212,63 @@ INSERT INTO app_user (username, password, role)
 VALUES ('doc001', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'DOCTOR');
 INSERT INTO doctor_profile (user_id, doctor_id, name, age, gender, title, department_id)
 VALUES (
-           (SELECT id FROM app_user WHERE username='doc001'),
-           '00000001',
-           'Dr. John Chen',
-           40,
-           'male',
-           'Attending Physician',
-           1  -- Internal Medicine
-       );
+    (SELECT id FROM app_user WHERE username='doc001'),
+    '00000001',
+    'Dr. John Chen',
+    40,
+    'male',
+    'Attending Physician',
+    1  -- Internal Medicine
+);
 
 -- Doctor 2 (Surgical)
 INSERT INTO app_user (username, password, role)
 VALUES ('doc002', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'DOCTOR');
 INSERT INTO doctor_profile (user_id, doctor_id, name, age, gender, title, department_id)
 VALUES (
-           (SELECT id FROM app_user WHERE username='doc002'),
-           '00000002',
-           'Dr. Emily Sun',
-           35,
-           'female',
-           'Surgeon',
-           2  -- Surgical
-       );
+    (SELECT id FROM app_user WHERE username='doc002'),
+    '00000002',
+    'Dr. Emily Sun',
+    35,
+    'female',
+    'Surgeon',
+    2  -- Surgical
+);
 
 -- Doctor 3 (Internal Medicine)
 INSERT INTO app_user (username, password, role)
 VALUES ('doc003', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'DOCTOR');
 INSERT INTO doctor_profile (user_id, doctor_id, name, age, gender, title, department_id)
 VALUES (
-           (SELECT id FROM app_user WHERE username='doc003'),
-           '00000003',
-           'Dr. Kevin Zhou',
-           45,
-           'male',
-           'Chief Physician',
-           1  -- Internal Medicine
-       );
+    (SELECT id FROM app_user WHERE username='doc003'),
+    '00000003',
+    'Dr. Kevin Zhou',
+    45,
+    'male',
+    'Chief Physician',
+    1  -- Internal Medicine
+);
 
 -- ==========================================
--- Map Doctors to Diseases (examples)
+-- Map Doctors to Diseases (limit 1~3 per doctor)
 -- ==========================================
--- doc001 -> Internal Medicine diseases
+-- Choose specific diseases per doctor instead of all in department
+-- For reproducibility, we select fixed IDs by name
+
+-- doc001 -> 3 Internal Medicine diseases: Heart, Liver, Kidney
 INSERT INTO doctor_disease (doctor_profile_id, disease_id)
-SELECT dp.id, d.id FROM doctor_profile dp JOIN disease d ON d.department_id = 1 WHERE dp.doctor_id = '00000001';
--- doc002 -> Surgical diseases
+VALUES
+    ((SELECT id FROM doctor_profile WHERE doctor_id = '00000001'), (SELECT id FROM disease WHERE code = 'IM-HD')),
+    ((SELECT id FROM doctor_profile WHERE doctor_id = '00000001'), (SELECT id FROM disease WHERE code = 'IM-LD')),
+    ((SELECT id FROM doctor_profile WHERE doctor_id = '00000001'), (SELECT id FROM disease WHERE code = 'IM-KD'));
+
+-- doc002 -> 2 Surgical diseases: Thoracic Surgery, Burns
 INSERT INTO doctor_disease (doctor_profile_id, disease_id)
-SELECT dp.id, d.id FROM doctor_profile dp JOIN disease d ON d.department_id = 2 WHERE dp.doctor_id = '00000002';
--- doc003 -> Internal Medicine diseases
+VALUES
+    ((SELECT id FROM doctor_profile WHERE doctor_id = '00000002'), (SELECT id FROM disease WHERE code = 'SU-TS')),
+    ((SELECT id FROM doctor_profile WHERE doctor_id = '00000002'), (SELECT id FROM disease WHERE code = 'SU-BN'));
+
+-- doc003 -> 1 Internal Medicine disease: Stomach Disease
 INSERT INTO doctor_disease (doctor_profile_id, disease_id)
-SELECT dp.id, d.id FROM doctor_profile dp JOIN disease d ON d.department_id = 1 WHERE dp.doctor_id = '00000003';
+VALUES
+    ((SELECT id FROM doctor_profile WHERE doctor_id = '00000003'), (SELECT id FROM disease WHERE code = 'IM-ST'));
