@@ -1,10 +1,12 @@
 package com.hospital.ouc.registrationsystem.domain.service;
 
 import com.hospital.ouc.registrationsystem.domain.entity.AppUser;
+import com.hospital.ouc.registrationsystem.domain.entity.DoctorProfile;
 import com.hospital.ouc.registrationsystem.domain.entity.PatientProfile;
 import com.hospital.ouc.registrationsystem.domain.enums.Gender;
 import com.hospital.ouc.registrationsystem.domain.enums.Role;
 import com.hospital.ouc.registrationsystem.domain.repository.AppUserRepository;
+import com.hospital.ouc.registrationsystem.domain.repository.DoctorProfileRepository;
 import com.hospital.ouc.registrationsystem.domain.repository.PatientProfileRepository;
 import com.hospital.ouc.registrationsystem.web.dto.LoginRequest;
 import com.hospital.ouc.registrationsystem.web.dto.LoginResponse;
@@ -25,14 +27,17 @@ public class AuthService {
 
     private final AppUserRepository appUserRepository;
     private final PatientProfileRepository patientProfileRepository;
+    private final DoctorProfileRepository doctorProfileRepository;
 
     // 固定盐（与 init.sql 保持一致）
     private static final String SALT = "OucWebDev123";
 
     public AuthService(AppUserRepository appUserRepository,
-                       PatientProfileRepository patientProfileRepository) {
+                       PatientProfileRepository patientProfileRepository,
+                       DoctorProfileRepository doctorProfileRepository) {
         this.appUserRepository = appUserRepository;
         this.patientProfileRepository = patientProfileRepository;
+        this.doctorProfileRepository = doctorProfileRepository;
     }
 
     /**
@@ -56,6 +61,12 @@ public class AuthService {
         resp.setUserId(user.getId());
         resp.setUsername(user.getUsername());
         resp.setRole(user.getRole().name());
+        // 绑定医生身份：登录的 DOCTOR 自动携带其 doctorId，前端无需再输入
+        if (user.getRole() == Role.DOCTOR) {
+            DoctorProfile doctor = doctorProfileRepository.findByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("医生档案不存在"));
+            resp.setDoctorId(doctor.getDoctorId());
+        }
         return resp;
     }
 
