@@ -11,7 +11,7 @@ DROP TABLE IF EXISTS app_user CASCADE;
 DROP TABLE IF EXISTS department CASCADE;
 
 -- ==========================================
--- Drop ENUM types
+-- Drop ENUM types (time_slot 保留；性别改为 VARCHAR+CHECK)
 -- ==========================================
 DROP TYPE IF EXISTS gender_enum CASCADE;
 DROP TYPE IF EXISTS time_slot CASCADE;
@@ -19,7 +19,7 @@ DROP TYPE IF EXISTS time_slot CASCADE;
 -- ==========================================
 -- ENUM Definitions
 -- ==========================================
-CREATE TYPE gender_enum AS ENUM ('male', 'female');
+-- 性别枚举不再使用数据库类型，改为 VARCHAR + CHECK 约束
 
 CREATE TYPE time_slot AS ENUM (
     'AM1', 'AM2', 'AM3', 'AM4',
@@ -62,7 +62,7 @@ CREATE TABLE patient_profile (
     name VARCHAR(100) NOT NULL,
     phone_number VARCHAR(15) NOT NULL UNIQUE,
     age INT,
-    gender gender_enum NOT NULL,
+    gender VARCHAR(10) NOT NULL CHECK (gender IN ('male','female')),
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
@@ -76,7 +76,7 @@ CREATE TABLE doctor_profile (
     doctor_id VARCHAR(10) UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
     age INT,
-    gender gender_enum NOT NULL,
+    gender VARCHAR(10) NOT NULL CHECK (gender IN ('male','female')),
     title VARCHAR(100),
 
     department_id INT REFERENCES department(id),
@@ -156,9 +156,9 @@ CREATE TABLE doctor_department_schedule (
 -- Enable pgcrypto for hashing (sha256 with salt)
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- ADMIN account
+-- ADMIN account（密码+盐 与后端一致）
 INSERT INTO app_user (username, password, role)
-VALUES ('admin', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'ADMIN');
+VALUES ('admin', encode(digest('123456' || 'OucWebDev123', 'sha256'), 'hex'), 'ADMIN');
 
 -- ==========================================
 -- PATIENTS (3 examples)
@@ -166,7 +166,7 @@ VALUES ('admin', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'A
 
 -- Patient 1
 INSERT INTO app_user (username, password, role)
-VALUES ('patient001', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'PATIENT');
+VALUES ('patient001', encode(digest('123456' || 'OucWebDev123', 'sha256'), 'hex'), 'PATIENT');
 INSERT INTO patient_profile (user_id, id_card, name, phone_number, age, gender)
 VALUES (
     (SELECT id FROM app_user WHERE username='patient001'),
@@ -179,7 +179,7 @@ VALUES (
 
 -- Patient 2
 INSERT INTO app_user (username, password, role)
-VALUES ('patient002', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'PATIENT');
+VALUES ('patient002', encode(digest('123456' || 'OucWebDev123', 'sha256'), 'hex'), 'PATIENT');
 INSERT INTO patient_profile (user_id, id_card, name, phone_number, age, gender)
 VALUES (
     (SELECT id FROM app_user WHERE username='patient002'),
@@ -192,7 +192,7 @@ VALUES (
 
 -- Patient 3
 INSERT INTO app_user (username, password, role)
-VALUES ('patient003', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'PATIENT');
+VALUES ('patient003', encode(digest('123456' || 'OucWebDev123', 'sha256'), 'hex'), 'PATIENT');
 INSERT INTO patient_profile (user_id, id_card, name, phone_number, age, gender)
 VALUES (
     (SELECT id FROM app_user WHERE username='patient003'),
@@ -209,7 +209,7 @@ VALUES (
 
 -- Doctor 1 (Internal Medicine)
 INSERT INTO app_user (username, password, role)
-VALUES ('doc001', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'DOCTOR');
+VALUES ('doc001', encode(digest('123456' || 'OucWebDev123', 'sha256'), 'hex'), 'DOCTOR');
 INSERT INTO doctor_profile (user_id, doctor_id, name, age, gender, title, department_id)
 VALUES (
     (SELECT id FROM app_user WHERE username='doc001'),
@@ -223,7 +223,7 @@ VALUES (
 
 -- Doctor 2 (Surgical)
 INSERT INTO app_user (username, password, role)
-VALUES ('doc002', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'DOCTOR');
+VALUES ('doc002', encode(digest('123456' || 'OucWebDev123', 'sha256'), 'hex'), 'DOCTOR');
 INSERT INTO doctor_profile (user_id, doctor_id, name, age, gender, title, department_id)
 VALUES (
     (SELECT id FROM app_user WHERE username='doc002'),
@@ -237,7 +237,7 @@ VALUES (
 
 -- Doctor 3 (Internal Medicine)
 INSERT INTO app_user (username, password, role)
-VALUES ('doc003', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'DOCTOR');
+VALUES ('doc003', encode(digest('123456' || 'OucWebDev123', 'sha256'), 'hex'), 'DOCTOR');
 INSERT INTO doctor_profile (user_id, doctor_id, name, age, gender, title, department_id)
 VALUES (
     (SELECT id FROM app_user WHERE username='doc003'),
@@ -252,8 +252,7 @@ VALUES (
 -- ==========================================
 -- Map Doctors to Diseases (limit 1~3 per doctor)
 -- ==========================================
--- Choose specific diseases per doctor instead of all in department
--- For reproducibility, we select fixed IDs by name
+-- 选择固定的 1~3 个疾病映射到医生，满足约束
 
 -- doc001 -> 3 Internal Medicine diseases: Heart, Liver, Kidney
 INSERT INTO doctor_disease (doctor_profile_id, disease_id)
