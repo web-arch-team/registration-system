@@ -45,7 +45,9 @@ public class AuthService {
         AppUser user = appUserRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
 
-        String inputHash = sha256Hex(SALT + (request.getPassword() == null ? "" : request.getPassword()));
+        String plain = request.getPassword() == null ? "" : request.getPassword();
+        // 与注册和 init.sql 保持一致：明文 + SALT -> sha256 hex
+        String inputHash = sha256Hex(plain + SALT);
         if (!inputHash.equalsIgnoreCase(user.getPassword())) {
             throw new RuntimeException("用户名或密码错误");
         }
