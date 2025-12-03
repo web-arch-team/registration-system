@@ -4,8 +4,11 @@ import com.hospital.ouc.registrationsystem.domain.entity.AppUser;
 import com.hospital.ouc.registrationsystem.domain.repository.AppUserRepository;
 import com.hospital.ouc.registrationsystem.web.dto.LoginRequest;
 import com.hospital.ouc.registrationsystem.web.dto.LoginResponse;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * 认证服务：处理最基本的用户名+密码登录。
@@ -14,34 +17,26 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final AppUserRepository appUserRepository;
-    private final PasswordEncoder passwordEncoder;
 
-    public AuthService(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder) {
+    // 固定盐（与 init.sql 保持一致）
+    private static final String SALT = "OucWebDev123";
+
+    public AuthService(AppUserRepository appUserRepository) {
         this.appUserRepository = appUserRepository;
-        this.passwordEncoder = passwordEncoder;
     }
 
     /**
      * 登录逻辑：
      * 1. 根据用户名查询用户
-     * 2. 明文比对密码（与 init.sql 中一致）；若未来启用加密，则兼容 passwordEncoder.matches
+     * 2. 对 (盐 + 输入密码) 做 SHA-256，转十六进制，与数据库中的哈希字符串比对
      * 3. 返回响应 DTO
      */
     public LoginResponse login(LoginRequest request) {
         AppUser user = appUserRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
 
-        // 明文比对，保持与数据库中明文密码一致
-        boolean match = request.getPassword() != null && request.getPassword().equals(user.getPassword());
-        // 兼容：若未来某些用户密码是加密存储，这里仍然允许通过 encoder 校验
-        if (!match && passwordEncoder != null) {
-            try {
-                match = passwordEncoder.matches(request.getPassword(), user.getPassword());
-            } catch (Exception ignored) {
-                // 忽略 encoder 不可用/异常，保持明文比对为主
-            }
-        }
-        if (!match) {
+        String inputHash = sha256Hex(SALT + (request.getPassword() == null ? "" : request.getPassword()));
+        if (!inputHash.equalsIgnoreCase(user.getPassword())) {
             throw new RuntimeException("用户名或密码错误");
         }
 
@@ -50,5 +45,22 @@ public class AuthService {
         resp.setUsername(user.getUsername());
         resp.setRole(user.getRole().name());
         return resp;
+    }
+
+    /**
+     * 计算 SHA-256 并返回十六进制字符串。
+     */
+    private static String sha256Hex(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 不可用", e);
+        }
     }
 }

@@ -150,9 +150,12 @@ CREATE TABLE doctor_department_schedule (
 -- Insert Example Data
 -- ==========================================
 
+-- Enable pgcrypto for hashing
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- ADMIN account
 INSERT INTO app_user (username, password, role)
-VALUES ('admin', '123456', 'ADMIN');
+VALUES ('admin', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'ADMIN');
 
 -- ==========================================
 -- PATIENTS (3 examples)
@@ -160,7 +163,7 @@ VALUES ('admin', '123456', 'ADMIN');
 
 -- Patient 1
 INSERT INTO app_user (username, password, role)
-VALUES ('patient001', '123456', 'PATIENT');
+VALUES ('patient001', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'PATIENT');
 INSERT INTO patient_profile (user_id, id_card, name, phone_number, age, gender)
 VALUES (
            (SELECT id FROM app_user WHERE username='patient001'),
@@ -173,7 +176,7 @@ VALUES (
 
 -- Patient 2
 INSERT INTO app_user (username, password, role)
-VALUES ('patient002', '123456', 'PATIENT');
+VALUES ('patient002', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'PATIENT');
 INSERT INTO patient_profile (user_id, id_card, name, phone_number, age, gender)
 VALUES (
            (SELECT id FROM app_user WHERE username='patient002'),
@@ -186,7 +189,7 @@ VALUES (
 
 -- Patient 3
 INSERT INTO app_user (username, password, role)
-VALUES ('patient003', '123456', 'PATIENT');
+VALUES ('patient003', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'PATIENT');
 INSERT INTO patient_profile (user_id, id_card, name, phone_number, age, gender)
 VALUES (
            (SELECT id FROM app_user WHERE username='patient003'),
@@ -203,7 +206,7 @@ VALUES (
 
 -- Doctor 1 (Internal Medicine)
 INSERT INTO app_user (username, password, role)
-VALUES ('doc001', '123456', 'DOCTOR');
+VALUES ('doc001', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'DOCTOR');
 INSERT INTO doctor_profile (user_id, doctor_id, name, age, gender, title, department_id)
 VALUES (
            (SELECT id FROM app_user WHERE username='doc001'),
@@ -217,7 +220,7 @@ VALUES (
 
 -- Doctor 2 (Surgical)
 INSERT INTO app_user (username, password, role)
-VALUES ('doc002', '123456', 'DOCTOR');
+VALUES ('doc002', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'DOCTOR');
 INSERT INTO doctor_profile (user_id, doctor_id, name, age, gender, title, department_id)
 VALUES (
            (SELECT id FROM app_user WHERE username='doc002'),
@@ -231,7 +234,7 @@ VALUES (
 
 -- Doctor 3 (Internal Medicine)
 INSERT INTO app_user (username, password, role)
-VALUES ('doc003', '123456', 'DOCTOR');
+VALUES ('doc003', encode(digest('OucWebDev123' || '123456', 'sha256'), 'hex'), 'DOCTOR');
 INSERT INTO doctor_profile (user_id, doctor_id, name, age, gender, title, department_id)
 VALUES (
            (SELECT id FROM app_user WHERE username='doc003'),
