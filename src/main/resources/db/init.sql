@@ -13,13 +13,14 @@ DROP TABLE IF EXISTS department CASCADE;
 -- ==========================================
 -- Drop ENUM types
 -- ==========================================
-DROP TYPE IF EXISTS gender_enum CASCADE;
+-- DROP TYPE IF EXISTS gender_enum CASCADE;
 DROP TYPE IF EXISTS time_slot CASCADE;
 
 -- ==========================================
 -- ENUM Definitions
 -- ==========================================
-CREATE TYPE gender_enum AS ENUM ('male', 'female');
+
+-- CREATE TYPE gender_enum AS ENUM ('male', 'female');
 
 CREATE TYPE time_slot AS ENUM (
     'AM1', 'AM2', 'AM3', 'AM4',
@@ -62,7 +63,7 @@ CREATE TABLE patient_profile (
     name VARCHAR(100) NOT NULL,
     phone_number VARCHAR(15) NOT NULL UNIQUE,
     age INT,
-    gender gender_enum NOT NULL,
+    gender VARCHAR(15) NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
@@ -76,7 +77,7 @@ CREATE TABLE doctor_profile (
     doctor_id VARCHAR(10) UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
     age INT,
-    gender gender_enum NOT NULL,
+    gender VARCHAR(15) NOT NULL,
     title VARCHAR(100),
 
     department_id INT REFERENCES department(id),
