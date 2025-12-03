@@ -97,7 +97,11 @@ public class AuthService {
         // 性别值规范化与校验
         String g = req.getGender().trim().toLowerCase();
         Gender gender;
-        if ("male".equals(g)) gender = Gender.male; else if ("female".equals(g)) gender = Gender.female; else {
+        if ("male".equals(g)) {
+            gender = Gender.male;
+        } else if ("female".equals(g)) {
+            gender = Gender.female;
+        } else {
             throw new RuntimeException("性别取值不合法，应为 male 或 female");
         }
 
