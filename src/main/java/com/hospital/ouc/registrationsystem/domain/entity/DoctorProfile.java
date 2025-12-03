@@ -49,7 +49,8 @@ public class DoctorProfile {
     private Integer age;
 
     /**
-     * 性别（非空），数据库为 gender_enum，使用 Java 枚举并以字符串持久化（male/female）
+     * 性别（非空）：数据库为 VARCHAR(10) + CHECK（取值为 'male'、'female'），
+     * Java 使用 Gender 枚举并以字符串持久化，值与数据库保持一致（小写）。
      */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
