@@ -105,8 +105,8 @@ public class AuthService {
             throw new RuntimeException("性别取值不合法，应为 male 或 female");
         }
 
-        // 生成密码哈希（与 init.sql 一致：SALT + 明文 -> sha256 hex）
-        String passwordHash = sha256Hex(SALT + req.getPassword());
+        // 生成密码哈希（与 init.sql 一致：明文 + SALT -> sha256 hex）
+        String passwordHash = sha256Hex(req.getPassword() + SALT);
 
         // 保存 AppUser
         AppUser user = AppUser.builder()
