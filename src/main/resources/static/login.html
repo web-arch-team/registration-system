@@ -32,7 +32,18 @@
                 return;
             }
             const data = await resp.json();
-            document.getElementById('result').textContent = '登录成功!\n用户ID: ' + data.userId + '\n用户名: ' + data.username + '\n角色: ' + data.role + '\n\nHello ' + data.role + '!';
+            document.getElementById('result').textContent = '登录成功! 正在跳转...';
+            // 根据角色跳转到不同的页面
+            const role = (data.role || '').toUpperCase();
+            if (role === 'ADMIN') {
+                window.location.href = '/hello-admin.html';
+            } else if (role === 'DOCTOR') {
+                window.location.href = '/hello-doctor.html';
+            } else if (role === 'PATIENT') {
+                window.location.href = '/hello-patient.html';
+            } else {
+                document.getElementById('result').textContent = '未知角色: ' + data.role;
+            }
         } catch (err) {
             document.getElementById('result').textContent = '请求异常: ' + err.message;
         }
@@ -40,4 +51,3 @@
 </script>
 </body>
 </html>
-

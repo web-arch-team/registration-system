@@ -24,14 +24,24 @@ public class AuthService {
     /**
      * 登录逻辑：
      * 1. 根据用户名查询用户
-     * 2. 校验密码（支持已被 DataInitializer 加密后的密码）
+     * 2. 明文比对密码（与 init.sql 中一致）；若未来启用加密，则兼容 passwordEncoder.matches
      * 3. 返回响应 DTO
      */
     public LoginResponse login(LoginRequest request) {
         AppUser user = appUserRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        // 明文比对，保持与数据库中明文密码一致
+        boolean match = request.getPassword() != null && request.getPassword().equals(user.getPassword());
+        // 兼容：若未来某些用户密码是加密存储，这里仍然允许通过 encoder 校验
+        if (!match && passwordEncoder != null) {
+            try {
+                match = passwordEncoder.matches(request.getPassword(), user.getPassword());
+            } catch (Exception ignored) {
+                // 忽略 encoder 不可用/异常，保持明文比对为主
+            }
+        }
+        if (!match) {
             throw new RuntimeException("用户名或密码错误");
         }
 
@@ -42,4 +52,3 @@ public class AuthService {
         return resp;
     }
 }
-
