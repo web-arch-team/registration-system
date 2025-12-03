@@ -77,6 +77,9 @@ public class AuthService {
         if (req.getGender() == null || req.getGender().isBlank()) {
             throw new RuntimeException("性别不能为空");
         }
+        if (req.getName() == null || req.getName().isBlank()) {
+            throw new RuntimeException("姓名不能为空");
+        }
 
         // 用户名唯一
         appUserRepository.findByUsername(req.getUsername()).ifPresent(u -> {
