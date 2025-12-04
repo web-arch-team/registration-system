@@ -15,4 +15,10 @@ public interface DoctorProfileRepository extends JpaRepository<DoctorProfile, Lo
 
     // 根据科室ID查找医生
     List<DoctorProfile> findByDepartmentId(Long departmentId);
+
+    // 查找所有有效的医生
+    List<DoctorProfile> findByIsActiveTrue();
+
+    // 根据科室ID查找有效的医生
+    List<DoctorProfile> findByDepartmentIdAndIsActiveTrue(Long departmentId);
 }

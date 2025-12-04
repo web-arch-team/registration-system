@@ -2,140 +2,182 @@ package com.hospital.ouc.registrationsystem.domain.service;
 
 import com.hospital.ouc.registrationsystem.domain.entity.*;
 import com.hospital.ouc.registrationsystem.domain.repository.*;
-import com.hospital.ouc.registrationsystem.web.dto.DepartmentDTO;
-import com.hospital.ouc.registrationsystem.web.dto.DoctorScheduleForPatientDTO;
-import com.hospital.ouc.registrationsystem.web.dto.PatientScheduleQueryDTO;
+import com.hospital.ouc.registrationsystem.web.dto.*;
+import com.hospital.ouc.registrationsystem.domain.enums.TimeSlot;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class PatientScheduleService {
 
-    private final DoctorDepartmentScheduleRepository scheduleRepository;
-    private final PatientDoctorRegistrationRepository registrationRepository;
+    private final DepartmentRepository departmentRepository;
+    private final DiseaseRepository diseaseRepository;
     private final DoctorProfileRepository doctorProfileRepository;
+    private final DoctorDiseaseRepository doctorDiseaseRepository;
+    private final DoctorDepartmentScheduleRepository scheduleRepository;
 
     public PatientScheduleService(
-            DoctorDepartmentScheduleRepository scheduleRepository,
-            PatientDoctorRegistrationRepository registrationRepository,
-            DoctorProfileRepository doctorProfileRepository) {
-        this.scheduleRepository = scheduleRepository;
-        this.registrationRepository = registrationRepository;
+            DepartmentRepository departmentRepository,
+            DiseaseRepository diseaseRepository,
+            DoctorProfileRepository doctorProfileRepository,
+            DoctorDiseaseRepository doctorDiseaseRepository,
+            DoctorDepartmentScheduleRepository scheduleRepository) {
+        this.departmentRepository = departmentRepository;
+        this.diseaseRepository = diseaseRepository;
         this.doctorProfileRepository = doctorProfileRepository;
+        this.doctorDiseaseRepository = doctorDiseaseRepository;
+        this.scheduleRepository = scheduleRepository;
     }
 
-    /**
-     * 获取所有科室列表
-     */
+    // 获取所有科室
     public List<DepartmentDTO> getAllDepartments() {
-        Set<Department> departments = new HashSet<>();
-
-        // 从排班表中获取所有不重复的科室
-        List<DoctorDepartmentSchedule> allSchedules = scheduleRepository.findAll();
-        for (DoctorDepartmentSchedule schedule : allSchedules) {
-            if (schedule.getDepartment() != null) {
-                departments.add(schedule.getDepartment());
-            }
-        }
-
-        // 从医生表中获取所有不重复的科室（作为补充）
-        List<DoctorProfile> allDoctors = doctorProfileRepository.findAll();
-        for (DoctorProfile doctor : allDoctors) {
-            if (doctor.getDepartment() != null) {
-                departments.add(doctor.getDepartment());
-            }
-        }
-
-        return departments.stream()
-                .map(dept -> {
-                    DepartmentDTO dto = new DepartmentDTO();
-                    dto.setId(dept.getId());
-                    dto.setDepartmentName(dept.getDepartmentName());
-                    return dto;
-                })
+        return departmentRepository.findAll().stream()
+                .map(this::convertToDepartmentDTO)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 患者查询医生排班（基础版本，只支持按科室筛选）
-     */
-    public List<DoctorScheduleForPatientDTO> queryDoctorSchedules(PatientScheduleQueryDTO queryDTO) {
-        List<DoctorDepartmentSchedule> schedules;
+    // 根据科室ID获取该科室负责的疾病
+    public List<DiseaseDTO> getDiseasesByDepartment(Long departmentId) {
+        return diseaseRepository.findByDepartmentId(departmentId).stream()
+                .map(this::convertToDiseaseDTO)
+                .collect(Collectors.toList());
+    }
 
-        if (queryDTO.getDepartmentId() != null) {
-            // 按科室筛选
-            schedules = scheduleRepository.findByDepartmentId(queryDTO.getDepartmentId());
+    // 根据疾病ID获取可以治疗该疾病的医生
+    public List<DoctorDTO> getDoctorsByDisease(Long diseaseId) {
+        List<DoctorDisease> doctorDiseases = doctorDiseaseRepository.findByDiseaseId(diseaseId);
+
+        return doctorDiseases.stream()
+                .map(DoctorDisease::getDoctorProfile)
+                .filter(doctor -> doctor.getIsActive()) // 只返回有效的医生
+                .map(this::convertToDoctorDTO)
+                .collect(Collectors.toList());
+    }
+
+    // 根据医生ID获取该医生的排班情况
+    public DoctorScheduleDTO getSchedulesByDoctor(Long doctorId, Integer weekday) {
+        Optional<DoctorProfile> doctorOpt = doctorProfileRepository.findById(doctorId);
+        if (doctorOpt.isEmpty()) {
+            throw new RuntimeException("医生不存在");
+        }
+
+        DoctorProfile doctor = doctorOpt.get();
+        DoctorScheduleDTO dto = new DoctorScheduleDTO();
+        dto.setDoctorId(doctor.getId());
+        dto.setDoctorName(doctor.getName());
+        dto.setDoctorTitle(doctor.getTitle());
+
+        if (doctor.getDepartment() != null) {
+            dto.setDepartmentName(doctor.getDepartment().getDepartmentName());
+        }
+
+        // 获取医生的排班
+        List<DoctorDepartmentSchedule> schedules;
+        if (weekday != null) {
+            schedules = scheduleRepository.findByDoctorProfileIdAndWeekday(doctorId, weekday);
         } else {
-            // 查看所有排班
-            schedules = scheduleRepository.findAll();
+            schedules = scheduleRepository.findByDoctorProfileId(doctorId);
         }
 
         // 转换为DTO
-        List<DoctorScheduleForPatientDTO> dtos = new ArrayList<>();
-        for (DoctorDepartmentSchedule schedule : schedules) {
-            DoctorScheduleForPatientDTO dto = new DoctorScheduleForPatientDTO();
-            DoctorProfile doctor = schedule.getDoctorProfile();
-            Department department = schedule.getDepartment();
+        List<ScheduleItemDTO> scheduleItems = schedules.stream()
+                .map(this::convertToScheduleItemDTO)
+                .collect(Collectors.toList());
 
-            dto.setScheduleId(schedule.getId());
-            dto.setDoctorId(doctor.getId());
-            dto.setDoctorName(doctor.getName());
-            dto.setDoctorTitle(doctor.getTitle());
-            dto.setDoctorAge(doctor.getAge());
-            dto.setDoctorGender(doctor.getGender().name());
-            dto.setDepartmentId(department.getId());
-            dto.setDepartmentName(department.getDepartmentName());
-            dto.setWeekday(schedule.getWeekday());
-            dto.setTimeslot(schedule.getTimeslot());
-
-            // 简单统计（后续完善）
-            dto.setCurrentPatients(0);
-            dto.setAvailable(true);
-
-            dtos.add(dto);
-        }
-
-        return dtos;
+        dto.setSchedules(scheduleItems);
+        return dto;
     }
 
-    /**
-     * 根据科室ID获取医生列表
-     */
-    public List<DoctorScheduleForPatientDTO> getDoctorsByDepartment(Long departmentId) {
-        // 先获取该科室下的所有医生
-        List<DoctorProfile> doctors = doctorProfileRepository.findByDepartmentId(departmentId);
+    // 获取医生的所有排班
+    public Map<Integer, List<ScheduleItemDTO>> getSchedulesByDoctorGroupedByWeekday(Long doctorId) {
+        List<DoctorDepartmentSchedule> allSchedules = scheduleRepository.findByDoctorProfileId(doctorId);
 
-        // 获取每个医生的排班信息
-        List<DoctorScheduleForPatientDTO> result = new ArrayList<>();
-        for (DoctorProfile doctor : doctors) {
-            List<DoctorDepartmentSchedule> doctorSchedules = scheduleRepository.findByDoctorProfile_Id(doctor.getId());
-            for (DoctorDepartmentSchedule schedule : doctorSchedules) {
-                DoctorScheduleForPatientDTO dto = new DoctorScheduleForPatientDTO();
-                Department department = schedule.getDepartment();
+        // 按星期分组
+        Map<Integer, List<ScheduleItemDTO>> groupedSchedules = new HashMap<>();
 
-                dto.setScheduleId(schedule.getId());
-                dto.setDoctorId(doctor.getId());
-                dto.setDoctorName(doctor.getName());
-                dto.setDoctorTitle(doctor.getTitle());
-                dto.setDoctorAge(doctor.getAge());
-                dto.setDoctorGender(doctor.getGender().name());
-                dto.setDepartmentId(department.getId());
-                dto.setDepartmentName(department.getDepartmentName());
-                dto.setWeekday(schedule.getWeekday());
-                dto.setTimeslot(schedule.getTimeslot());
+        for (DoctorDepartmentSchedule schedule : allSchedules) {
+            Integer weekday = schedule.getWeekday();
+            ScheduleItemDTO item = convertToScheduleItemDTO(schedule);
 
-                dto.setCurrentPatients(0);
-                dto.setAvailable(true);
-
-                result.add(dto);
-            }
+            groupedSchedules.computeIfAbsent(weekday, k -> new ArrayList<>()).add(item);
         }
 
-        return result;
+        return groupedSchedules;
+    }
+
+    // 根据科室ID直接获取该科室的医生
+    public List<DoctorDTO> getDoctorsByDepartment(Long departmentId) {
+        return doctorProfileRepository.findByDepartmentIdAndIsActiveTrue(departmentId).stream()
+                .map(this::convertToDoctorDTO)
+                .collect(Collectors.toList());
+    }
+
+    // 转换方法
+    private DepartmentDTO convertToDepartmentDTO(Department department) {
+        DepartmentDTO dto = new DepartmentDTO();
+        dto.setId(department.getId());
+        dto.setDepartmentName(department.getDepartmentName());
+        return dto;
+    }
+
+    private DiseaseDTO convertToDiseaseDTO(Disease disease) {
+        DiseaseDTO dto = new DiseaseDTO();
+        dto.setId(disease.getId());
+        dto.setName(disease.getName());
+        dto.setCode(disease.getCode());
+        dto.setDescription(disease.getDescription());
+        dto.setDepartmentId(disease.getDepartment().getId());
+        dto.setDepartmentName(disease.getDepartment().getDepartmentName());
+        return dto;
+    }
+
+    private DoctorDTO convertToDoctorDTO(DoctorProfile doctor) {
+        DoctorDTO dto = new DoctorDTO();
+        dto.setId(doctor.getId());
+        dto.setDoctorId(doctor.getDoctorId());
+        dto.setName(doctor.getName());
+        dto.setTitle(doctor.getTitle());
+        dto.setAge(doctor.getAge());
+        dto.setGender(doctor.getGender().name());
+
+        if (doctor.getDepartment() != null) {
+            dto.setDepartmentId(doctor.getDepartment().getId());
+            dto.setDepartmentName(doctor.getDepartment().getDepartmentName());
+        }
+
+        return dto;
+    }
+
+    private ScheduleItemDTO convertToScheduleItemDTO(DoctorDepartmentSchedule schedule) {
+        ScheduleItemDTO dto = new ScheduleItemDTO();
+        dto.setScheduleId(schedule.getId());
+        dto.setWeekday(schedule.getWeekday());
+        dto.setTimeslot(schedule.getTimeslot());
+        dto.setTimeDescription(getTimeDescription(schedule.getTimeslot()));
+
+        // 这里可以根据实际业务统计已挂号人数
+        // 目前先简单设置为0，实际项目中需要查询挂号记录表
+        dto.setCurrentPatients(0);
+        dto.setAvailable(dto.getCurrentPatients() < dto.getMaxPatients());
+
+        return dto;
+    }
+
+    private String getTimeDescription(TimeSlot timeslot) {
+        switch (timeslot) {
+            case AM1: return "上午 8:00-9:00";
+            case AM2: return "上午 9:00-10:00";
+            case AM3: return "上午 10:00-11:00";
+            case AM4: return "上午 11:00-12:00";
+            case PM1: return "下午 14:00-15:00";
+            case PM2: return "下午 15:00-16:00";
+            case PM3: return "下午 16:00-17:00";
+            case PM4: return "下午 17:00-18:00";
+            default: return "未知时间段";
+        }
     }
 }
