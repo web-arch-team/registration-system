@@ -356,6 +356,10 @@ npm run dev
 - 前端在 `http://localhost:5173` 运行；
 - 所有以 `/api` 开头的前端请求会被 Vite 代理到后端（去掉 `/api` 前缀），方便开发时跨域访问。
 
+测试用例：
+
+
+
 ## 前端 TODO 列表
 
 按你的业务设想，前端可以分阶段实现：
@@ -420,3 +424,11 @@ npm run dev
 - [ ] 将接口地址、角色常量等封装到统一的配置 / 常量文件
 - [ ] 简单国际化（中英文切换）
 - [ ] 更细致的表单校验与用户体验优化（loading、空状态提示等）
+
+
+
+- 连接点已对齐：vite.config.ts 去掉了 /api 重写，前端请求 /api/auth/login 将直达后端 /api/auth/login。
+- 新增 src/api/http.ts（axios 实例，baseURL /api），src/api/auth.ts（登录 API），src/stores/auth.ts（Pinia 持久化基础用户信息，SessionStorage）。
+- src/main.ts 启动时尝试恢复登录态。 
+- 登录页 src/views/LoginView.vue 现调用后端 /api/auth/login，成功后存储用户信息并按角色跳转；后端未连通时仍可用示例账号跳转演示。
+- 构建校验：npm run build ✅。

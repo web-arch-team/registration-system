@@ -53,10 +53,12 @@
 </template>
 
 <script setup lang="ts">
-import axios from 'axios';
 import { ElMessage } from 'element-plus';
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { login } from '@/api/auth';
+import type { LoginResult } from '@/api/auth';
+import { useAuthStore } from '@/stores/auth';
 
 type UserRole = 'ADMIN' | 'DOCTOR' | 'PATIENT';
 
@@ -74,6 +76,7 @@ const demoUsers: DemoUser[] = [
 ];
 
 const router = useRouter();
+const authStore = useAuthStore();
 const loading = ref(false);
 const loginError = ref('');
 const form = reactive({
@@ -95,6 +98,12 @@ function applyDemo(user: DemoUser) {
   loginError.value = '';
 }
 
+function handleLoginSuccess(data: LoginResult) {
+  authStore.setUser(data);
+  ElMessage.success('登录成功');
+  navigateByRole(data.role);
+}
+
 async function onSubmit() {
   if (!form.username || !form.password) {
     loginError.value = '请输入用户名和密码';
@@ -104,24 +113,22 @@ async function onSubmit() {
   loginError.value = '';
 
   try {
-    const res = await axios.post('/api/login', {
+    const result = await login({
       username: form.username,
       password: form.password,
     });
-    const roleFromApi = res.data?.role as UserRole | undefined;
-    if (roleFromApi) {
-      ElMessage.success('登录成功');
-      navigateByRole(roleFromApi);
-      return;
-    }
-    throw new Error('ROLE_NOT_RETURNED');
+    handleLoginSuccess(result);
   } catch (error) {
+    // 后端未连通时，允许使用示例账号演示跳转
     const demo = demoUsers.find(
       (item) => item.username === form.username && item.password === form.password,
     );
     if (demo) {
-      ElMessage.success('已使用示例账号直接登录');
-      navigateByRole(demo.role);
+      handleLoginSuccess({
+        userId: -1,
+        username: demo.username,
+        role: demo.role,
+      });
     } else {
       loginError.value = '登录失败，请检查账号密码或稍后再试';
     }
