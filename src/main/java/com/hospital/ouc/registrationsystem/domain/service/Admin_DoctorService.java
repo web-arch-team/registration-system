@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class AdminDoctorService {
+public class Admin_DoctorService {
     private final DoctorProfileRepository doctorProfileRepository;
     private final AppUserRepository appUserRepository;
     private final DepartmentRepository departmentRepository;
@@ -154,7 +154,11 @@ public class AdminDoctorService {
 
         // 更新疾病关联
         if (updateDTO.getDiseaseIds() != null) {
+            // 1. 先删除该医生所有已有的疾病关联
             doctorDiseaseRepository.deleteByDoctorProfileId(id);
+            // 2. 确保删除操作立即执行（有些情况下JPA可能会延迟执行）
+            doctorDiseaseRepository.flush();
+            // 3. 再插入新的疾病关联
             saveDoctorDiseases(id, updateDTO.getDiseaseIds());
         }
 
