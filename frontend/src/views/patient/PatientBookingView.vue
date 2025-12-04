@@ -183,7 +183,7 @@ const tableData = computed(() =>
         timeslot: t.timeslot,
         remain: (t.maxPatients ?? 16) - (t.currentPatients ?? 0),
         max: t.maxPatients ?? 16,
-        available: t.available ?? true,
+        available: (t.available ?? true) && ((t.maxPatients ?? 16) - (t.currentPatients ?? 0) > 0),
       }));
     });
 
@@ -262,7 +262,13 @@ function selectSlot(slot: {
   doctorName: string;
   weekday: number;
   timeslot: string;
+  remain: number;
+  available: boolean;
 }) {
+  if (!slot.available || slot.remain <= 0) {
+    ElMessage.info('该时段已满');
+    return;
+  }
   selectedSlot.value = { ...slot };
 }
 

@@ -54,9 +54,15 @@ public class DoctorDepartmentSchedule {
     private Integer weekday;
 
     /**
-     * 时间槽（非空），数据库为 time_slot，使用 Java 枚举并以字符串持久化（AM1..AM4���PM1..PM4）
+     * 时间槽（非空），数据库为 time_slot，使用 Java 枚举并以字符串持久化（AM1..PM4）
      */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 4)
-    private TimeSlot timeslot; // AM1..AM4, PM1..PM4
+    private TimeSlot timeslot; // AM1..PM4, PM1..PM4
+
+    /**
+     * 每个时段最大可挂号数（可为空，空表示用全局默认）
+     */
+    @Column(name = "max_patients_per_slot")
+    private Integer maxPatientsPerSlot;
 }

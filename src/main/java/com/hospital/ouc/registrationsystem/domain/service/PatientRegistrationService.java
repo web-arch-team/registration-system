@@ -9,6 +9,8 @@ import com.hospital.ouc.registrationsystem.web.dto.RegistrationResponseDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class PatientRegistrationService {
 
@@ -18,6 +20,8 @@ public class PatientRegistrationService {
     private final DoctorDepartmentScheduleRepository scheduleRepository;
     private final DoctorDiseaseRepository doctorDiseaseRepository;
     private final PatientDoctorRegistrationRepository registrationRepository;
+
+    private static final int DEFAULT_MAX_PER_SLOT = 2;
 
     public PatientRegistrationService(PatientProfileRepository patientProfileRepository,
                                       DoctorProfileRepository doctorProfileRepository,
@@ -49,11 +53,24 @@ public class PatientRegistrationService {
 
         // 校验排班是否匹配
         TimeSlot slot = TimeSlot.valueOf(req.getTimeslot());
-        boolean hasSchedule = scheduleRepository
-                .findByDoctorProfileIdAndWeekday(doctor.getId(), req.getWeekday()).stream()
-                .anyMatch(s -> s.getTimeslot() == slot);
-        if (!hasSchedule) {
+        List<DoctorDepartmentSchedule> schedules = scheduleRepository.findByDoctorProfileIdAndWeekday(doctor.getId(), req.getWeekday());
+        DoctorDepartmentSchedule targetSchedule = schedules.stream()
+                .filter(s -> s.getTimeslot() == slot)
+                .findFirst()
+                .orElse(null);
+        if (targetSchedule == null) {
             throw new RuntimeException("该医生在所选时段无排班");
+        }
+
+        int max = targetSchedule.getMaxPatientsPerSlot() != null ? targetSchedule.getMaxPatientsPerSlot() : DEFAULT_MAX_PER_SLOT;
+        long current = registrationRepository.countByDoctorProfileIdAndWeekdayAndTimeslotAndStatusIn(
+                doctor.getId(),
+                req.getWeekday(),
+                slot,
+                List.of(RegistrationStatus.PAID, RegistrationStatus.PENDING, RegistrationStatus.COMPLETED)
+        );
+        if (current >= max) {
+            throw new RuntimeException("该时段号源已满");
         }
 
         PatientDoctorRegistration registration = PatientDoctorRegistration.builder()

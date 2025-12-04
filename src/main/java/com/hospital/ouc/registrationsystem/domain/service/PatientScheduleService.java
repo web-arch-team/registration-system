@@ -4,6 +4,7 @@ import com.hospital.ouc.registrationsystem.domain.entity.*;
 import com.hospital.ouc.registrationsystem.domain.repository.*;
 import com.hospital.ouc.registrationsystem.web.dto.*;
 import com.hospital.ouc.registrationsystem.domain.enums.TimeSlot;
+import com.hospital.ouc.registrationsystem.domain.enums.RegistrationStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,18 +20,23 @@ public class PatientScheduleService {
     private final DoctorProfileRepository doctorProfileRepository;
     private final DoctorDiseaseRepository doctorDiseaseRepository;
     private final DoctorDepartmentScheduleRepository scheduleRepository;
+    private final PatientDoctorRegistrationRepository registrationRepository;
+
+    private static final int DEFAULT_MAX_PER_SLOT = 2; // 默认每时段可挂号数量，可后续做配置
 
     public PatientScheduleService(
             DepartmentRepository departmentRepository,
             DiseaseRepository diseaseRepository,
             DoctorProfileRepository doctorProfileRepository,
             DoctorDiseaseRepository doctorDiseaseRepository,
-            DoctorDepartmentScheduleRepository scheduleRepository) {
+            DoctorDepartmentScheduleRepository scheduleRepository,
+            PatientDoctorRegistrationRepository registrationRepository) {
         this.departmentRepository = departmentRepository;
         this.diseaseRepository = diseaseRepository;
         this.doctorProfileRepository = doctorProfileRepository;
         this.doctorDiseaseRepository = doctorDiseaseRepository;
         this.scheduleRepository = scheduleRepository;
+        this.registrationRepository = registrationRepository;
     }
 
     // 获取所有科室
@@ -90,6 +96,13 @@ public class PatientScheduleService {
         return schedules.stream()
                 .map(s -> {
                     DoctorProfile doc = s.getDoctorProfile();
+                    int max = s.getMaxPatientsPerSlot() != null ? s.getMaxPatientsPerSlot() : DEFAULT_MAX_PER_SLOT;
+                    long current = registrationRepository.countByDoctorProfileIdAndWeekdayAndTimeslotAndStatusIn(
+                            doc.getId(),
+                            s.getWeekday(),
+                            s.getTimeslot(),
+                            java.util.List.of(RegistrationStatus.PAID, RegistrationStatus.PENDING, RegistrationStatus.COMPLETED)
+                    );
                     DiseaseTimetableItemDTO dto = new DiseaseTimetableItemDTO();
                     dto.setDoctorProfileId(doc.getId());
                     dto.setDoctorId(doc.getDoctorId());
@@ -99,9 +112,9 @@ public class PatientScheduleService {
                     dto.setWeekday(s.getWeekday());
                     dto.setTimeslot(s.getTimeslot().name());
                     dto.setTimeDescription(getTimeDescription(s.getTimeslot()));
-                    dto.setAvailable(true);
-                    dto.setCurrentPatients(0);
-                    dto.setMaxPatients(100); // 约定每医生每天16个号
+                    dto.setCurrentPatients((int) current);
+                    dto.setMaxPatients(max);
+                    dto.setAvailable(current < max);
                     return dto;
                 })
                 .collect(Collectors.toList());

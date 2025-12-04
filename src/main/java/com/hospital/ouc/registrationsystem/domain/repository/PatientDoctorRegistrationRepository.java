@@ -14,4 +14,9 @@ public interface PatientDoctorRegistrationRepository extends JpaRepository<Patie
            "where d.doctorId = :doctorId and r.weekday = :weekday")
     List<PatientDoctorRegistration> findByDoctorIdAndWeekday(@Param("doctorId") String doctorId,
                                                              @Param("weekday") Integer weekday);
+
+    long countByDoctorProfileIdAndWeekdayAndTimeslotAndStatusIn(Long doctorProfileId,
+                                                                Integer weekday,
+                                                                com.hospital.ouc.registrationsystem.domain.enums.TimeSlot timeslot,
+                                                                java.util.Collection<com.hospital.ouc.registrationsystem.domain.enums.RegistrationStatus> statuses);
 }
