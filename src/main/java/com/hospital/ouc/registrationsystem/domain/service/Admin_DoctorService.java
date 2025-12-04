@@ -58,7 +58,8 @@ public class Admin_DoctorService {
         // 创建用户账号
         AppUser appUser = AppUser.builder()
                 .username(doctorDTO.getUsername())
-                .password(sha256Hex(SALT + doctorDTO.getPassword()))
+                // 与系统统一的登录校验一致：明文 + SALT -> SHA-256
+                .password(sha256Hex(doctorDTO.getPassword() + SALT))
                 .role(Role.DOCTOR)
                 .isActive(true)
                 .build();
@@ -108,7 +109,8 @@ public class Admin_DoctorService {
         }
 
         if (updateDTO.getPassword() != null) {
-            appUser.setPassword(sha256Hex(SALT + updateDTO.getPassword()));
+            // 明文 + SALT -> SHA-256（与登录逻辑一致）
+            appUser.setPassword(sha256Hex(updateDTO.getPassword() + SALT));
         }
 
         // 更新医生档案信息

@@ -5,7 +5,7 @@
       <el-menu router :default-active="activeMenu">
         <el-menu-item index="/admin/home">首页</el-menu-item>
         <el-menu-item index="/admin/patients">病人管理</el-menu-item>
-        <el-menu-item index="/admin/doctors" disabled>医生管理（TODO）</el-menu-item>
+        <el-menu-item index="/admin/doctors">医生管理</el-menu-item>
         <el-menu-item index="/admin/schedule" disabled>排班管理（TODO）</el-menu-item>
       </el-menu>
     </el-aside>

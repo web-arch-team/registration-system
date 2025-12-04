@@ -22,6 +22,11 @@ const routes: RouteRecordRaw[] = [
         name: 'admin-patients',
         component: () => import('@/views/admin/PatientManagementView.vue'),
       },
+      {
+        path: 'doctors',
+        name: 'admin-doctors',
+        component: () => import('@/views/admin/DoctorManagementView.vue'),
+      },
     ],
   },
   {
