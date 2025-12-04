@@ -432,3 +432,9 @@ npm run dev
 - src/main.ts 启动时尝试恢复登录态。 
 - 登录页 src/views/LoginView.vue 现调用后端 /api/auth/login，成功后存储用户信息并按角色跳转；后端未连通时仍可用示例账号跳转演示。
 - 构建校验：npm run build ✅。
+
+
+如果我来实现这个挂号功能我会如何实现
+1. 患者需要选择相应的department，然后就可以选择相应的disease。从而他可以在后端的doctor_disease表中查询到对应的医生列表。然后他与
+doctor_department_schedule表进行关联查询，查询能够治疗这个疾病的医生的排班情况。从而最后他在前端就能拼接出一张8x5的值班表
+行代表timeslot，列代表weekday。然后患者选择相应的时间段和医生，提交挂号请求。而为了方便查看，患者可以选择星期几，然后查看这一天的排班情况。

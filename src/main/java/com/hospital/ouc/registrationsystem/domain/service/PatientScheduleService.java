@@ -58,6 +58,55 @@ public class PatientScheduleService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 获取某疾病对应医生在本周的排班（timeslot × weekday 交集）。
+     */
+    public List<DiseaseTimetableItemDTO> getDiseaseTimetable(Long diseaseId, Integer weekday) {
+        Disease disease = diseaseRepository.findById(diseaseId)
+                .orElseThrow(() -> new RuntimeException("疾病不存在"));
+
+        // 能诊疗该疾病的医生
+        List<Long> doctorIds = doctorDiseaseRepository.findByDiseaseId(diseaseId).stream()
+                .map(dd -> dd.getDoctorProfile().getId())
+                .collect(Collectors.toList());
+        if (doctorIds.isEmpty()) {
+            return List.of();
+        }
+
+        // 排班查询：若传 weekday 则仅查该天
+        List<DoctorDepartmentSchedule> schedules;
+        if (weekday != null) {
+            schedules = scheduleRepository.findByDoctorProfileIdInAndWeekday(doctorIds, weekday);
+        } else {
+            schedules = scheduleRepository.findByDoctorProfileIdIn(doctorIds);
+        }
+
+        // 只保留科室匹配当前疾病科室的排班
+        Long deptId = disease.getDepartment().getId();
+        schedules = schedules.stream()
+                .filter(s -> s.getDepartment() != null && deptId.equals(s.getDepartment().getId()))
+                .collect(Collectors.toList());
+
+        return schedules.stream()
+                .map(s -> {
+                    DoctorProfile doc = s.getDoctorProfile();
+                    DiseaseTimetableItemDTO dto = new DiseaseTimetableItemDTO();
+                    dto.setDoctorProfileId(doc.getId());
+                    dto.setDoctorId(doc.getDoctorId());
+                    dto.setDoctorName(doc.getName());
+                    dto.setDoctorTitle(doc.getTitle());
+                    dto.setDepartmentName(s.getDepartment() == null ? null : s.getDepartment().getDepartmentName());
+                    dto.setWeekday(s.getWeekday());
+                    dto.setTimeslot(s.getTimeslot().name());
+                    dto.setTimeDescription(getTimeDescription(s.getTimeslot()));
+                    dto.setAvailable(true);
+                    dto.setCurrentPatients(0);
+                    dto.setMaxPatients(100); // 约定每医生每天16个号
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
     // 根据医生ID获取该医生的排班情况
     public DoctorScheduleDTO getSchedulesByDoctor(Long doctorId, Integer weekday) {
         Optional<DoctorProfile> doctorOpt = doctorProfileRepository.findById(doctorId);
