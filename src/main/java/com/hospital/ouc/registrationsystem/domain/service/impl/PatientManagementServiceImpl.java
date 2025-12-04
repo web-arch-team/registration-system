@@ -32,7 +32,7 @@ public class PatientManagementServiceImpl implements PatientManagementService {
     @Transactional
     public PatientDTO addPatient(PatientDTO patientDTO) {
         // 1. 校验用户名唯一性（仅未删除用户）
-        if (appUserRepository.findByUsername(patientDTO.getUsername()).isPresent()) {
+        if (patientDTO.getUsername() != null && appUserRepository.findByUsername(patientDTO.getUsername()).isPresent()) {
             throw new BusinessException("用户名已存在");
         }
         // 2. 校验身份证唯一性
@@ -111,17 +111,20 @@ public class PatientManagementServiceImpl implements PatientManagementService {
 
         // 3. 修改身份证号（传值才处理，未传跳过）
         if (StringUtils.hasText(patientDTO.getIdCard()) && !profile.getIdCard().equals(patientDTO.getIdCard())) {
-            if (patientProfileRepository.findByIdCard(patientDTO.getIdCard()).isPresent()) {
-                throw new BusinessException("身份证号已存在，无法修改");
-            }
+            // 查找是否有其他患者使用该身份证号（排除当前患者）
+            patientProfileRepository.findByIdCard(patientDTO.getIdCard()).ifPresent(existingProfile -> {
+                if (!existingProfile.getId().equals(profile.getId())) {
+                    throw new BusinessException("身份证号已存在，无法修改");
+                }
+            });
             profile.setIdCard(patientDTO.getIdCard());
         }
 
         // 4. 修改手机号（传值才处理，未传跳过）
         if (StringUtils.hasText(patientDTO.getPhoneNumber()) && !profile.getPhoneNumber().equals(patientDTO.getPhoneNumber())) {
-            if (patientProfileRepository.findByPhoneNumber(patientDTO.getPhoneNumber()).isPresent()) {
-                throw new BusinessException("手机号已存在，无法修改");
-            }
+            patientProfileRepository.findByPhoneNumber(patientDTO.getPhoneNumber())
+                    .filter(existingProfile -> !existingProfile.getId().equals(profile.getId()))
+                    .ifPresent(existingProfile -> { throw new BusinessException("手机号已存在，无法修改");});
             profile.setPhoneNumber(patientDTO.getPhoneNumber());
         }
 
@@ -151,8 +154,8 @@ public class PatientManagementServiceImpl implements PatientManagementService {
     @Override
     @Transactional
     public void deletePatient(Long id) {
-        PatientProfile profile = patientProfileRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("患者不存在"));
+        PatientProfile profile = patientProfileRepository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new BusinessException("患者不存在或已被删除"));
         profile.setIsActive(false);
         profile.getUser().setIsActive(false); // 关联用户也标记为删除
         patientProfileRepository.save(profile);

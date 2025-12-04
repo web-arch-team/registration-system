@@ -20,7 +20,7 @@ public interface PatientProfileRepository extends JpaRepository<PatientProfile, 
 
     // 多条件分页查询
     @Query("SELECT p FROM PatientProfile p WHERE " +
-            "(:#{#name} IS NULL OR p.name LIKE %:#{#name}%) AND " +
+            "(:#{#name} IS NULL OR p.name LIKE :#{#name}%) AND " +
             "(:#{#idCard} IS NULL OR p.idCard = :#{#idCard}) AND " +
             "(:#{#phoneNumber} IS NULL OR p.phoneNumber = :#{#phoneNumber}) AND " +
             "(:#{#gender} IS NULL OR p.gender = :#{#gender}) AND " +

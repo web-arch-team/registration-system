@@ -4,36 +4,39 @@ package com.hospital.ouc.registrationsystem.web.dto;
 import com.hospital.ouc.registrationsystem.domain.enums.Gender;
 import com.hospital.ouc.registrationsystem.domain.validation.AddGroup;
 import com.hospital.ouc.registrationsystem.domain.validation.UpdateGroup;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 @Data
 public class PatientDTO {
-    private Long id; // 患者档案ID（无需传）
-    private Long userId; // 关联用户ID（无需传）
+    private Long id; // 患者档案ID（后端生成，前端无需传）
+    private Long userId; // 关联用户ID（后端生成，前端无需传）
+
+    @NotBlank(message = "用户名不能为空", groups = AddGroup.class)
     private String username; // 登录用户名
 
-    // 新增：必填+格式校验；修改：传值则校验格式，不传不校验
+    // 核心修正：正则转义符+完整身份证校验（支持18位纯数字/最后一位X/x）
     @NotBlank(message = "身份证号不能为空", groups = AddGroup.class)
-    @Pattern(regexp = "^[1-9]\\d{17}$", message = "身份证号格式错误", groups = {AddGroup.class, UpdateGroup.class})
+    @Pattern(
+            regexp = "^[1-9]\\d{16}(\\d|X|x)$", // 正确转义：\\d 代表数字
+            message = "身份证号格式错误，请输入18位合法身份证号（最后一位可填X/x）",
+            groups = {AddGroup.class, UpdateGroup.class}
+    )
     private String idCard;
 
-    // 新增：必填；修改：传值则改，不传不校验（即使传空也不校验，仅新增必填）
     @NotBlank(message = "姓名不能为空", groups = AddGroup.class)
     private String name;
 
-    // 新增：必填+格式校验；修改：传值则校验格式，不传不校验
     @NotBlank(message = "手机号不能为空", groups = AddGroup.class)
     @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式错误", groups = {AddGroup.class, UpdateGroup.class})
     private String phoneNumber;
 
-    private Integer age; // 无校验，传值即改，不传保留
+    @Min(value = 0, message = "年龄不能小于0", groups = {AddGroup.class, UpdateGroup.class})
+    @Max(value = 150, message = "年龄不能大于150", groups = {AddGroup.class, UpdateGroup.class})
+    private Integer age;
 
-    // 新增：必填；修改：传值则改，不传不校验
     @NotNull(message = "性别不能为空", groups = AddGroup.class)
-    private Gender gender; // male/female
+    private Gender gender; // 仅支持 male/female
 
-    private Boolean isActive; // 是否激活（仅后台逻辑修改，前端无需传）
+    private Boolean isActive; // 后端控制（前端无需传）
 }
