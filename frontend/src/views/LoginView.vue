@@ -46,7 +46,10 @@
           :title="loginError"
         />
 
-        <el-button type="primary" :loading="loading" class="submit" @click="onSubmit">登录</el-button>
+        <div class="actions">
+          <el-button type="primary" :loading="loading" class="submit" @click="onSubmit">登录</el-button>
+          <el-button class="submit" plain @click="goRegister">患者注册</el-button>
+        </div>
       </el-form>
     </el-card>
   </div>
@@ -136,6 +139,10 @@ async function onSubmit() {
     loading.value = false;
   }
 }
+
+function goRegister() {
+  router.push('/patient/register');
+}
 </script>
 
 <style scoped>
@@ -192,6 +199,12 @@ h1 {
 
 .submit {
   width: 100%;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
 }
 
 .mb-12 {
