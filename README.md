@@ -308,133 +308,47 @@ main-分支push测试
 
 # 前端开发规划
 
-> 前端采用独立的 `frontend` 子项目，基于 Vue3 + Vite + ElementPlus + Vue Router + Pinia + Axios，与后端通过 RESTful API 通信。
+> 前端采用独立的 `frontend` 子项目，基于 **Vue3 + Vite + ElementPlus + Vue Router + Pinia + Axios**，与后端通过 RESTful API 通信。入口：`frontend/src/main.ts`。
 
-## 前端工程结构
+## 工程结构（摘要）
+- `frontend/vite.config.ts`：`/api` 代理到 `http://localhost:8080`，别名 `@ -> src`
+- `frontend/src/router/index.ts`：登录页 + 管理员/医生/患者三端路由
+- `frontend/src/stores/auth.ts`：Pinia，持久化登录用户（含 patientId/doctorId）
+- 主要页面：
+  - `views/LoginView.vue`：统一登录（必须走后端 `/api/auth/login`，已去掉示例直跳）
+  - 管理员：`AdminLayout.vue`，`PatientManagementView.vue`（患者 CRUD，对接 `/api/admin/patients`），`DoctorManagementView.vue`（医生 CRUD，对接 `/api/admin/doctors` 等）
+  - 医生：`DoctorLayout.vue`，`DoctorTodayTodoView.vue`（今日待诊），`DoctorScheduleView.vue`（周排班）
+  - 患者：`PatientLayout.vue`，`PatientRegisterView.vue`（注册 `/api/auth/register`），`PatientBookingView.vue`（挂号排班查询+提交）
 
-在项目根目录下新增了 `frontend/` 目录，主要结构如下：
-
-- `frontend/package.json`：前端依赖与脚本定义
-- `frontend/vite.config.ts`：Vite 配置，已将 `/api` 代理到 `http://localhost:8080`
-- `frontend/index.html`：入口 HTML
-- `frontend/tsconfig.json`：TypeScript 配置
-- `frontend/src/main.ts`：入口文件，挂载 Vue 应用，注册 Pinia、Router、ElementPlus
-- `frontend/src/App.vue`：顶层组件，使用 `<router-view />` 承载页面
-- `frontend/src/router/`：前端路由
-  - `index.ts`：定义登录页、管理员/医生/病人三套布局及其子路由
-- `frontend/src/views/`
-  - `LoginView.vue`：统一登录页面（根据后端返回的角色跳转三端）
-  - `admin/AdminLayout.vue`：管理员布局（左侧菜单 + 顶部标题 + 内容区）
-  - `admin/PatientManagementView.vue`：病人管理页面（示例占位，后续对接后端 CRUD 接口）
-  - `doctor/DoctorLayout.vue`：医生端布局
-  - `doctor/DoctorScheduleView.vue`：医生查看个人排班（TODO）
-  - `doctor/DoctorTodayTodoView.vue`：医生查看今日待诊病人（TODO）
-  - `patient/PatientLayout.vue`：病人端布局
-  - `patient/PatientRegisterView.vue`：病人注册页面（TODO）
-  - `patient/PatientBookingView.vue`：病人挂号页面（TODO）
-
-## 前端运行方式
-
-在项目根目录下：
-
-1. 安装前端依赖
-
+## 运行
 ```bash
 cd frontend
 npm install
+npm run dev   # 默认 http://localhost:5173
 ```
+后端默认 `http://localhost:8080`，前端所有 `/api` 请求自动代理。
 
-2. 启动前端开发服务器（默认端口 5173）
+## 登录账号（后端初始化）
+- 患者：`patient001 / 123456`
+- 医生：`doc001 / 123456`
+- 管理员：`admin / 123456`
 
-```bash
-npm run dev
-```
+## 挂号相关说明
+- 排班查询：`/api/schedule/disease/{diseaseId}/timetable?weekday=` 返回能诊疗该病的医生在对应科室的排班（含 `currentPatients/maxPatients/available`），患者端以 8×5 表格展示。
+- 挂号提交：`POST /api/registration`，参数 `patientProfileId/doctorProfileId/diseaseId/weekday/timeslot`，后端校验号源并写入 `patient_doctor_registration`（status=PAID）。时段剩余为 0 时前端禁止挂号。
+- 号源上限：默认每时段 2；若 `doctor_department_schedule.max_patients_per_slot` 有值，则用排班的值。
 
-此时：
+## 数据库（挂号相关）
+- `doctor_department_schedule` 表含 `max_patients_per_slot`（可空，空用默认 2）。
+- 排班剩余号 = 上限 - `patient_doctor_registration` 中 doctorProfileId+weekday+timeslot 且状态 PAID/PENDING/COMPLETED 的记录数。
 
-- 后端 Spring Boot 应用在 `http://localhost:8080` 运行；
-- 前端在 `http://localhost:5173` 运行；
-- 所有以 `/api` 开头的前端请求会被 Vite 代理到后端（去掉 `/api` 前缀），方便开发时跨域访问。
+---
 
-测试用例：
-
-
-
-## 前端 TODO 列表
-
-按你的业务设想，前端可以分阶段实现：
-
-### 通用 & 基础设施
-- [x] 初始化 Vue3 + Vite + TypeScript 项目结构
-- [x] 集成 ElementPlus 组件库
-- [x] 集成 Vue Router，划分三端路由结构（管理员 / 医生 / 病人）
-- [x] 集成 Pinia 状态管理（后续可用于存储当前登录用户信息、Token 等）
-- [x] 配置 Axios + `/api` 代理，方便统一调用后端接口
-- [ ] 全局错误提示与登录态失效处理（如 401 自动跳转登录页）
-
-### 认证与账号
-- [x] 统一登录页面 `LoginView` 框架
-- [ ] 根据后端实际登录接口（`AuthController`）对接统一登录：
-  - 向后端发送用户名+密码
-  - 根据返回的角色（PATIENT / DOCTOR / ADMIN）存入 Pinia
-  - 根据角色跳转 `/admin` / `/doctor` / `/patient` 对应首页
-- [ ] 病人注册页面：
-  - 采集身份证号、姓名、性别、年龄、手机号等
-  - 调用后端接口创建 `app_user` + `patient_profile`
-
-### 管理员端
-- [x] 管理员布局 `AdminLayout`（左侧菜单 + 顶部标题 + 内容区）
-- [ ] 病人管理页面 `PatientManagementView`：
-  - 列表展示患者（分页、按条件查询：姓名、手机号、是否激活等）
-  - 新增患者（表单弹窗）
-  - 编辑患者基本信息
-  - 软删除患者（调用后端将 `is_active=false`）
-- [ ] 医生管理页面：
-  - 列表展示医生
-  - 新增医生账号 + 档案
-  - 修改科室、可诊断疾病
-  - 软删除医生
-- [ ] 排班管理页面：
-  - 选择科室
-  - 查看这一周（weekday 1–5 × TimeSlot）的排班表
-  - 为医生新增 / 调整 / 取消排班（对应修改 `doctor_department_schedule`）
-
-### 医生端
-- [x] 医生布局 `DoctorLayout`
-- [ ] 今日待诊页面 `DoctorTodayTodoView`：
-  - 查询今天的所有挂号记录（`patient_doctor_registration`）
-  - 展示病人档案信息
-- [ ] 我的排班页面 `DoctorScheduleView`：
-  - 展示当前医生一周排班情况（基于 `doctor_department_schedule`）
-
-### 病人端
-- [x] 病人布局 `PatientLayout`
-- [ ] 注册页面 `PatientRegisterView`（见上“认证与账号”）
-- [ ] 挂号页面 `PatientBookingView`：完整流程：
-  1. 选择科室（内科 / 外科）
-  2. 根据科室展示可选疾病列表
-  3. 选择疾病后，查询本周排班（weekday + timeslot + 对应医生）
-  4. 选择医生 + 时间段
-  5. 提交挂号请求（创建 `patient_doctor_registration` 记录）
-  6. 挂号成功后展示确认信息 / 号单
-- [ ] 病人查看自己的挂号记录（历史、当前状态）
-
-### 后续可选优化
-- [ ] 统一的 UI 风格与布局（头部导航、面包屑等）
-- [ ] 将接口地址、角色常量等封装到统一的配置 / 常量文件
-- [ ] 简单国际化（中英文切换）
-- [ ] 更细致的表单校验与用户体验优化（loading、空状态提示等）
-
-
-
-- 连接点已对齐：vite.config.ts 去掉了 /api 重写，前端请求 /api/auth/login 将直达后端 /api/auth/login。
-- 新增 src/api/http.ts（axios 实例，baseURL /api），src/api/auth.ts（登录 API），src/stores/auth.ts（Pinia 持久化基础用户信息，SessionStorage）。
-- src/main.ts 启动时尝试恢复登录态。 
-- 登录页 src/views/LoginView.vue 现调用后端 /api/auth/login，成功后存储用户信息并按角色跳转；后端未连通时仍可用示例账号跳转演示。
-- 构建校验：npm run build ✅。
-
+尾注：
 
 如果我来实现这个挂号功能我会如何实现
-1. 患者需要选择相应的department，然后就可以选择相应的disease。从而他可以在后端的doctor_disease表中查询到对应的医生列表。然后他与
-doctor_department_schedule表进行关联查询，查询能够治疗这个疾病的医生的排班情况。从而最后他在前端就能拼接出一张8x5的值班表
-行代表timeslot，列代表weekday。然后患者选择相应的时间段和医生，提交挂号请求。而为了方便查看，患者可以选择星期几，然后查看这一天的排班情况。
+
+患者需要选择相应的department，然后就可以选择相应的disease。从而他可以在后端的doctor_disease表中
+查询到对应的医生列表。然后他与 doctor_department_schedule表进行关联查询，查询能够治疗这个疾病的
+医生的排班情况。从而最后他在前端就能拼接出一张8x5的值班表 行代表timeslot，列代表weekday。然后患者
+选择相应的时间段和医生，提交挂号请求。而为了方便查看，患者可以选择星期几，然后查看这一天的排班情况。

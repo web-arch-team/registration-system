@@ -7,11 +7,6 @@
         这是 Vue + Element Plus 的前端框架，现阶段以演示为主。
         示例账号可直接跳转到对应角色欢迎页，后续可无缝对接后端登录接口。
       </p>
-      <div class="chips">
-        <el-tag v-for="item in demoUsers" :key="item.username" @click="applyDemo(item)" class="chip" effect="plain">
-          {{ item.label }}：{{ item.username }} / {{ item.password }}
-        </el-tag>
-      </div>
     </div>
 
     <el-card class="login-card" shadow="hover">
@@ -72,33 +67,20 @@ interface DemoUser {
   role: UserRole;
 }
 
-const demoUsers: DemoUser[] = [
-  { label: '病人', username: 'patient', password: 'patient123', role: 'PATIENT' },
-  { label: '医生', username: 'doctor', password: 'doctor123', role: 'DOCTOR' },
-  { label: '管理员', username: 'admin', password: 'admin123', role: 'ADMIN' },
-];
-
 const router = useRouter();
 const authStore = useAuthStore();
 const loading = ref(false);
 const loginError = ref('');
 const form = reactive({
-  username: demoUsers[0].username,
-  password: demoUsers[0].password,
-  role: demoUsers[0].role as UserRole,
+  username: '',
+  password: '',
+  role: 'PATIENT' as UserRole,
 });
 
 function navigateByRole(role: UserRole) {
   if (role === 'ADMIN') router.push('/admin/home');
   else if (role === 'DOCTOR') router.push('/doctor/home');
   else router.push('/patient/home');
-}
-
-function applyDemo(user: DemoUser) {
-  form.username = user.username;
-  form.password = user.password;
-  form.role = user.role;
-  loginError.value = '';
 }
 
 function handleLoginSuccess(data: LoginResult) {
@@ -122,19 +104,7 @@ async function onSubmit() {
     });
     handleLoginSuccess(result);
   } catch (error) {
-    // 后端未连通时，允许使用示例账号演示跳转
-    const demo = demoUsers.find(
-      (item) => item.username === form.username && item.password === form.password,
-    );
-    if (demo) {
-      handleLoginSuccess({
-        userId: -1,
-        username: demo.username,
-        role: demo.role,
-      });
-    } else {
-      loginError.value = '登录失败，请检查账号密码或稍后再试';
-    }
+    loginError.value = '登录失败，请检查账号密码或稍后再试';
   } finally {
     loading.value = false;
   }
@@ -176,16 +146,6 @@ h1 {
 .sub {
   color: #606266;
   margin: 0 0 12px;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.chip {
-  cursor: pointer;
 }
 
 .login-card {
