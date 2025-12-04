@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <title>选择医生和时间</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .disease-info {
+            background-color: #e8f4fc;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .disease-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .back-link {
+            color: #3498db;
+            text-decoration: none;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            color: #3498db;
+            font-style: italic;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .error {
+            color: #e74c3c;
+            background-color: #ffe6e6;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .doctor-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .doctor-card {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            transition: all 0.2s;
+        }
+
+        .doctor-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .doctor-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .doctor-avatar {
+            width: 60px;
+            height: 60px;
+            background-color: #3498db;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            margin-right: 15px;
+        }
+
+        .doctor-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .doctor-title {
+            color: #3498db;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .doctor-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .info-item {
+            padding: 5px;
+            background-color: white;
+            border-radius: 3px;
+        }
+
+        .info-label {
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+
+        .schedules-section {
+            margin-top: 20px;
+        }
+
+        .section-title {
+            color: #2c3e50;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .schedules-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .schedule-item {
+            padding: 10px;
+            background-color: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .schedule-item:hover {
+            border-color: #3498db;
+        }
+
+        .schedule-item.selected {
+            border-color: #2ecc71;
+            background-color: #e8f8ef;
+        }
+
+        .schedule-item.unavailable {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #f5f5f5;
+        }
+
+        .schedule-time {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+
+        .schedule-weekday {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .schedule-status {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .available {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .full {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .filter-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-label {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #7f8c8d;
+            padding: 40px 20px;
+            grid-column: 1 / -1;
+        }
+
+        .action-buttons {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 0 10px;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .btn-confirm {
+            background-color: #2ecc71;
+        }
+
+        .btn-confirm:hover {
+            background-color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="select-department.html" class="back-link">← 返回重新选择科室和疾病</a>
+
+    <h1>选择医生和时间</h1>
+
+    <div id="diseaseInfo" class="disease-info">
+        <div class="disease-name">正在加载疾病信息...</div>
+    </div>
+
+    <div class="filter-section">
+        <div class="filter-label">筛选条件：</div>
+        <div>
+            <label>星期：</label>
+            <select id="weekdayFilter" onchange="filterSchedules()">
+                <option value="">全部</option>
+                <option value="1">周一</option>
+                <option value="2">周二</option>
+                <option value="3">周三</option>
+                <option value="4">周四</option>
+                <option value="5">周五</option>
+            </select>
+        </div>
+        <div>
+            <label>时间段：</label>
+            <select id="timeslotFilter" onchange="filterSchedules()">
+                <option value="">全部</option>
+                <option value="AM">上午</option>
+                <option value="PM">下午</option>
+            </select>
+        </div>
+        <div>
+            <button class="btn" onclick="clearFilters()">清除筛选</button>
+        </div>
+    </div>
+
+    <div id="loadingDoctors" class="loading">正在加载医生信息...</div>
+
+    <div id="doctorList" class="doctor-list" style="display:none">
+        <!-- 医生卡片将通过JS动态生成 -->
+    </div>
+
+    <div class="action-buttons">
+        <button class="btn" onclick="window.location.href='select-department.html'">返回上一步</button>
+        <button id="confirmBtn" class="btn btn-confirm" onclick="confirmSelection()" disabled>确认选择 (模拟挂号)</button>
+    </div>
+</div>
+
+<script>
+    // 全局状态
+    const state = {
+        diseaseId: null,
+        diseaseName: null,
+        doctors: [],
+        schedules: {}, // doctorId -> schedules
+        selectedDoctorId: null,
+        selectedScheduleId: null,
+        selectedScheduleInfo: null
+    };
+
+    // 页面加载时初始化
+    window.onload = function() {
+        console.log('页面2：选择医生和时间');
+
+        // 从URL获取疾病信息
+        const urlParams = new URLSearchParams(window.location.search);
+        state.diseaseId = urlParams.get('diseaseId');
+        state.diseaseName = decodeURIComponent(urlParams.get('diseaseName') || '未知疾病');
+
+        if (!state.diseaseId) {
+            document.getElementById('diseaseInfo').innerHTML =
+                '<div class="error">错误：没有指定疾病ID，请返回重新选择</div>';
+            return;
+        }
+
+        // 显示疾病信息
+        document.getElementById('diseaseInfo').innerHTML = `
+                <div class="disease-name">当前疾病：${state.diseaseName}</div>
+                <div>疾病ID：${state.diseaseId}</div>
+            `;
+
+        console.log(`疾病ID: ${state.diseaseId}, 疾病名称: ${state.diseaseName}`);
+
+        // 加载医生信息
+        loadDoctors();
+    };
+
+    // 加载医生信息
+    async function loadDoctors() {
+        try {
+            const response = await fetch(`/api/schedule/disease/${state.diseaseId}/doctors`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const doctors = await response.json();
+            state.doctors = doctors;
+
+            // 加载每个医生的排班信息
+            await loadAllSchedules(doctors);
+
+            // 显示医生列表
+            displayDoctors();
+
+            // 隐藏加载状态
+            document.getElementById('loadingDoctors').style.display = 'none';
+            document.getElementById('doctorList').style.display = 'grid';
+
+            console.log('医生加载完成:', doctors.length, '个医生');
+        } catch (error) {
+            document.getElementById('loadingDoctors').innerHTML =
+                `<div class="error">加载医生失败: ${error.message}</div>`;
+            console.error('加载医生失败:', error);
+        }
+    }
+
+    // 加载所有医生的排班
+    async function loadAllSchedules(doctors) {
+        for (const doctor of doctors) {
+            try {
+                const response = await fetch(`/api/schedule/doctor/${doctor.id}/schedules`);
+
+                if (response.ok) {
+                    // 前端这里是对象而不是数组
+                    const scheduleData = await response.json();
+                    // 后端返回的是 DoctorScheduleDTO 对象，这里取其中的 schedules 数组
+                    const schedules = Array.isArray(scheduleData.schedules) ? scheduleData.schedules : [];
+                    state.schedules[doctor.id] = schedules;
+                    console.log(`医生"${doctor.name}"的排班加载完成:`, schedules.length, '个排班');
+                } else {
+                    console.warn(`无法加载医生"${doctor.name}"的排班`);
+                    state.schedules[doctor.id] = [];
+                }
+            } catch (error) {
+                console.error(`加载医生"${doctor.name}"排班失败:`, error);
+                state.schedules[doctor.id] = [];
+            }
+        }
+    }
+
+    // 显示医生列表
+    function displayDoctors() {
+        const doctorList = document.getElementById('doctorList');
+        doctorList.innerHTML = '';
+
+        if (state.doctors.length === 0) {
+            doctorList.innerHTML = '<div class="empty-state">暂无可以治疗该疾病的医生</div>';
+            return;
+        }
+
+        state.doctors.forEach(doctor => {
+            const doctorSchedules = state.schedules[doctor.id] || [];
+
+            const card = document.createElement('div');
+            card.className = 'doctor-card';
+            card.dataset.doctorId = doctor.id;
+
+            // 获取医生姓氏的第一个字符作为头像
+            const avatarChar = doctor.name.charAt(0);
+
+            card.innerHTML = `
+                    <div class="doctor-header">
+                        <div class="doctor-avatar">${avatarChar}</div>
+                        <div>
+                            <div class="doctor-name">${doctor.name}</div>
+                            <div class="doctor-title">${doctor.title || '医生'}</div>
+                        </div>
+                    </div>
+
+                    <div class="doctor-info">
+                        <div class="info-item">
+                            <span class="info-label">工号:</span> ${doctor.doctorId || 'N/A'}
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">性别:</span> ${doctor.gender === 'male' ? '男' : '女'}
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">年龄:</span> ${doctor.age || '未知'}
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">科室:</span> ${doctor.departmentName || '未知'}
+                        </div>
+                    </div>
+
+                    <div class="schedules-section">
+                        <div class="section-title">排班时间</div>
+                        <div id="schedules-${doctor.id}" class="schedules-list">
+                            ${renderSchedules(doctorSchedules, doctor.id)}
+                        </div>
+                    </div>
+                `;
+
+            doctorList.appendChild(card);
+        });
+    }
+
+    // 渲染排班列表
+    function renderSchedules(schedules, doctorId) {
+        if (!schedules || schedules.length === 0) {
+            return '<div class="empty-state" style="padding:10px;font-size:14px;">该医生暂无排班</div>';
+        }
+
+        // 获取筛选条件
+        const weekdayFilter = document.getElementById('weekdayFilter').value;
+        const timeslotFilter = document.getElementById('timeslotFilter').value;
+
+        // 应用筛选
+        const filteredSchedules = schedules.filter(schedule => {
+            let match = true;
+
+            if (weekdayFilter && schedule.weekday != weekdayFilter) {
+                match = false;
+            }
+
+            if (timeslotFilter) {
+                const isAM = schedule.timeslot.startsWith('AM');
+                const filterAM = timeslotFilter === 'AM';
+                if (isAM !== filterAM) {
+                    match = false;
+                }
+            }
+
+            return match;
+        });
+
+        if (filteredSchedules.length === 0) {
+            return '<div class="empty-state" style="padding:10px;font-size:14px;">暂无符合条件的排班</div>';
+        }
+
+        return filteredSchedules.map(schedule => {
+            const isSelected = state.selectedDoctorId === doctorId &&
+                state.selectedScheduleId === schedule.scheduleId;
+            const isAvailable = schedule.available;
+
+            return `
+                    <div class="schedule-item ${isSelected ? 'selected' : ''} ${!isAvailable ? 'unavailable' : ''}"
+                         data-doctor-id="${doctorId}"
+                         data-schedule-id="${schedule.scheduleId}"
+                         onclick="selectSchedule('${doctorId}', ${schedule.scheduleId}, ${JSON.stringify(schedule).replace(/"/g, '&quot;')})">
+                        <div class="schedule-time">${getTimeDescription(schedule.timeslot)}</div>
+                        <div class="schedule-weekday">${getWeekdayName(schedule.weekday)}</div>
+                        <div class="schedule-status ${isAvailable ? 'available' : 'full'}">
+                            ${isAvailable ? `剩余${schedule.maxPatients - schedule.currentPatients}个` : '已满'}
+                        </div>
+                    </div>
+                `;
+        }).join('');
+    }
+
+    // 获取星期名称
+    function getWeekdayName(weekday) {
+        const weekdays = ['', '周一', '周二', '周三', '周四', '周五'];
+        return weekdays[weekday] || `星期${weekday}`;
+    }
+
+    // 获取时间段描述
+    function getTimeDescription(timeslot) {
+        const timeMap = {
+            'AM1': '8:00-9:00',
+            'AM2': '9:00-10:00',
+            'AM3': '10:00-11:00',
+            'AM4': '11:00-12:00',
+            'PM1': '14:00-15:00',
+            'PM2': '15:00-16:00',
+            'PM3': '16:00-17:00',
+            'PM4': '17:00-18:00'
+        };
+        return timeMap[timeslot] || timeslot;
+    }
+
+    // 选择排班
+    function selectSchedule(doctorId, scheduleId, scheduleInfo) {
+        const schedule = JSON.parse(scheduleInfo);
+
+        if (!schedule.available) {
+            alert('该时间段已满，请选择其他时间');
+            return;
+        }
+
+        // 更新选中状态
+        state.selectedDoctorId = doctorId;
+        state.selectedScheduleId = scheduleId;
+        state.selectedScheduleInfo = schedule;
+
+        // 清除所有选中状态
+        document.querySelectorAll('.schedule-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+
+        // 设置当前选中
+        const selectedItem = document.querySelector(`[data-doctor-id="${doctorId}"][data-schedule-id="${scheduleId}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('selected');
+        }
+
+        // 启用确认按钮
+        document.getElementById('confirmBtn').disabled = false;
+
+        console.log('选择了排班:', {
+            doctorId,
+            scheduleId,
+            doctorName: schedule.doctorName,
+            time: `${getWeekdayName(schedule.weekday)} ${getTimeDescription(schedule.timeslot)}`
+        });
+    }
+
+    // 筛选排班
+    function filterSchedules() {
+        // 重新渲染所有医生的排班
+        state.doctors.forEach(doctor => {
+            const schedulesContainer = document.getElementById(`schedules-${doctor.id}`);
+            if (schedulesContainer) {
+                const doctorSchedules = state.schedules[doctor.id] || [];
+                schedulesContainer.innerHTML = renderSchedules(doctorSchedules, doctor.id);
+            }
+        });
+    }
+
+    // 清除筛选
+    function clearFilters() {
+        document.getElementById('weekdayFilter').value = '';
+        document.getElementById('timeslotFilter').value = '';
+        filterSchedules();
+    }
+
+    // 确认选择（模拟挂号）
+    function confirmSelection() {
+        if (!state.selectedDoctorId || !state.selectedScheduleInfo) {
+            alert('请先选择一个排班时间');
+            return;
+        }
+
+        const schedule = state.selectedScheduleInfo;
+        const doctorName = schedule.doctorName;
+        const time = `${getWeekdayName(schedule.weekday)} ${getTimeDescription(schedule.timeslot)}`;
+
+        alert(`挂号成功！\n\n医生：${doctorName}\n时间：${time}\n疾病：${state.diseaseName}\n\n(这是模拟挂号，实际功能需要调用挂号API)`);
+    }
+</script>
+</body>
+</html>

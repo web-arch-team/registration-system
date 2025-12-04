@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <title>选择科室和疾病</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+
+        .content {
+            display: flex;
+            gap: 20px;
+        }
+
+        .left-panel, .right-panel {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        .panel-title {
+            color: #3498db;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            color: #3498db;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .error {
+            color: #e74c3c;
+            background-color: #ffe6e6;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .department-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .department-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .department-item:hover {
+            background-color: #e8f4fc;
+            border-color: #3498db;
+        }
+
+        .department-item.selected {
+            background-color: #d4edff;
+            border-color: #3498db;
+            font-weight: bold;
+        }
+
+        .department-name {
+            font-size: 16px;
+            color: #2c3e50;
+        }
+
+        .disease-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+        }
+
+        .disease-item {
+            padding: 15px;
+            background-color: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .disease-item:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .disease-item.selected {
+            border-color: #3498db;
+            background-color: #e8f4fc;
+        }
+
+        .disease-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .disease-code {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .disease-desc {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .action-buttons {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #7f8c8d;
+            padding: 40px 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1> 医院挂号系统</h1>
+
+    <div class="content">
+        <!-- 左侧：科室列表 -->
+        <div class="left-panel">
+            <h2 class="panel-title">选择科室</h2>
+            <div id="loadingDepartments" class="loading">正在加载科室列表...</div>
+            <ul id="departmentList" class="department-list" style="display:none"></ul>
+        </div>
+
+        <!-- 右侧：疾病列表 -->
+        <div class="right-panel">
+            <h2 class="panel-title">选择疾病</h2>
+            <div id="diseaseInfo">
+                <div id="noDeptSelected" class="empty-state">
+                    请先在左侧选择一个科室
+                </div>
+                <div id="loadingDiseases" class="loading" style="display:none">正在加载疾病列表...</div>
+                <div id="diseaseList" class="disease-list" style="display:none"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button id="nextBtn" class="btn" onclick="goToNextPage()" disabled>下一步：选择医生和时间</button>
+    </div>
+</div>
+
+<script>
+    // 全局状态
+    const state = {
+        departments: [],
+        diseases: [],
+        selectedDepartmentId: null,
+        selectedDiseaseId: null,
+        selectedDiseaseName: null
+    };
+
+    // 页面加载时初始化
+    window.onload = function() {
+        console.log('页面1：选择科室和疾病');
+        loadDepartments();
+    };
+
+    // 加载科室列表
+    async function loadDepartments() {
+        try {
+            const response = await fetch('/api/schedule/departments');
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const departments = await response.json();
+            state.departments = departments;
+
+            // 显示科室列表
+            displayDepartments(departments);
+
+            // 隐藏加载状态
+            document.getElementById('loadingDepartments').style.display = 'none';
+            document.getElementById('departmentList').style.display = 'block';
+
+            console.log('科室加载完成:', departments.length, '个科室');
+        } catch (error) {
+            document.getElementById('loadingDepartments').innerHTML =
+                `<div class="error">加载科室失败: ${error.message}</div>`;
+            console.error('加载科室失败:', error);
+        }
+    }
+
+    // 显示科室列表
+    function displayDepartments(departments) {
+        const departmentList = document.getElementById('departmentList');
+        departmentList.innerHTML = '';
+
+        if (departments.length === 0) {
+            departmentList.innerHTML = '<div class="empty-state">暂无科室数据</div>';
+            return;
+        }
+
+        departments.forEach(dept => {
+            const li = document.createElement('li');
+            li.className = 'department-item';
+            li.dataset.id = dept.id;
+            li.innerHTML = `
+                    <div class="department-name">${dept.departmentName}</div>
+                `;
+
+            li.addEventListener('click', () => selectDepartment(dept.id, dept.departmentName));
+
+            departmentList.appendChild(li);
+        });
+    }
+
+    // 选择科室
+    async function selectDepartment(departmentId, departmentName) {
+        // 更新选中状态
+        const items = document.querySelectorAll('.department-item');
+        items.forEach(item => {
+            if (item.dataset.id === departmentId.toString()) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+
+        state.selectedDepartmentId = departmentId;
+
+        // 显示加载状态
+        document.getElementById('noDeptSelected').style.display = 'none';
+        document.getElementById('loadingDiseases').style.display = 'block';
+        document.getElementById('diseaseList').style.display = 'none';
+
+        // 加载该科室的疾病
+        try {
+            const response = await fetch(`/api/schedule/department/${departmentId}/diseases`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const diseases = await response.json();
+            state.diseases = diseases;
+
+            // 显示疾病列表
+            displayDiseases(diseases);
+
+            // 隐藏加载状态
+            document.getElementById('loadingDiseases').style.display = 'none';
+            document.getElementById('diseaseList').style.display = 'grid';
+
+            console.log(`科室"${departmentName}"的疾病加载完成:`, diseases.length, '个疾病');
+        } catch (error) {
+            document.getElementById('loadingDiseases').innerHTML =
+                `<div class="error">加载疾病失败: ${error.message}</div>`;
+            console.error('加载疾病失败:', error);
+        }
+    }
+
+    // 显示疾病列表
+    function displayDiseases(diseases) {
+        const diseaseList = document.getElementById('diseaseList');
+        diseaseList.innerHTML = '';
+
+        if (diseases.length === 0) {
+            diseaseList.innerHTML = '<div class="empty-state">该科室暂无疾病数据</div>';
+            return;
+        }
+
+        diseases.forEach(disease => {
+            const div = document.createElement('div');
+            div.className = 'disease-item';
+            div.dataset.id = disease.id;
+            div.innerHTML = `
+                    <div class="disease-name">${disease.name}</div>
+                    <div class="disease-code">${disease.code || '无代码'}</div>
+                    <div class="disease-desc">${disease.description || '暂无描述'}</div>
+                `;
+
+            div.addEventListener('click', () => selectDisease(disease.id, disease.name));
+
+            diseaseList.appendChild(div);
+        });
+    }
+
+    // 选择疾病
+    function selectDisease(diseaseId, diseaseName) {
+        // 更新选中状态
+        const items = document.querySelectorAll('.disease-item');
+        items.forEach(item => {
+            if (item.dataset.id === diseaseId.toString()) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+
+        state.selectedDiseaseId = diseaseId;
+        state.selectedDiseaseName = diseaseName;
+
+        // 启用下一步按钮
+        document.getElementById('nextBtn').disabled = false;
+
+        console.log(`选择了疾病: ${diseaseName} (ID: ${diseaseId})`);
+    }
+
+    // 跳转到下一页
+    function goToNextPage() {
+        if (!state.selectedDiseaseId) {
+            alert('请先选择一个疾病');
+            return;
+        }
+
+        // 将选中的疾病信息传递给下一页
+        const diseaseInfo = {
+            id: state.selectedDiseaseId,
+            name: state.selectedDiseaseName
+        };
+
+        // 使用URL参数传递疾病信息
+        window.location.href = `select-doctor.html?diseaseId=${state.selectedDiseaseId}&diseaseName=${encodeURIComponent(state.selectedDiseaseName)}`;
+    }
+
+    // 测试函数
+    window.testSelectFirstDisease = async function() {
+        if (state.departments.length === 0) {
+            console.log('还没有加载科室');
+            return;
+        }
+
+        // 选择第一个科室
+        const firstDept = state.departments[0];
+        console.log('选择第一个科室:', firstDept.departmentName);
+        await selectDepartment(firstDept.id, firstDept.departmentName);
+
+        // 等待疾病加载
+        setTimeout(() => {
+            if (state.diseases.length > 0) {
+                // 选择第一个疾病
+                const firstDisease = state.diseases[0];
+                console.log('选择第一个疾病:', firstDisease.name);
+                selectDisease(firstDisease.id, firstDisease.name);
+            }
+        }, 500);
+    };
+</script>
+</body>
+</html>

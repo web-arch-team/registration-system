@@ -1,13 +1,120 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <title>医生首页</title>
+  <meta charset="UTF-8" />
+  <title>医生工作台</title>
 </head>
 <body>
-  <h1>Hello, DOCTOR</h1>
-  <p>这里是医生的占位页面，后续可接入医生的待办与排班视图。</p>
-  <p><a href="/login.html">返回登录</a></p>
+  <h1>医生工作台 - 当日排班查询</h1>
+
+  <div>
+    <label>选择工作日：</label>
+    <select id="weekday">
+      <option value="1">周一</option>
+      <option value="2">周二</option>
+      <option value="3">周三</option>
+      <option value="4">周四</option>
+      <option value="5">周五</option>
+    </select>
+  </div>
+  <button id="query">查询</button>
+
+  <h2>当日日程（按时段）</h2>
+  <div id="list"></div>
+
+  <h2>本周值班表</h2>
+  <button id="refreshWeek">刷新本周排班</button>
+  <div id="weekTable"></div>
+
+  <script>
+    // 登录页写入 sessionStorage 的登录信息
+    const authInfo = (() => {
+      try {
+        return JSON.parse(sessionStorage.getItem('authInfo') || '{}');
+      } catch (e) {
+        return {};
+      }
+    })();
+
+    if (!authInfo.doctorId || (authInfo.role || '').toUpperCase() !== 'DOCTOR') {
+      alert('请先使用医生账号登录');
+      window.location.href = '/login.html';
+    }
+
+    const weekdaySelect = document.getElementById('weekday');
+    const queryBtn = document.getElementById('query');
+    const listDiv = document.getElementById('list');
+    const refreshWeekBtn = document.getElementById('refreshWeek');
+    const weekTableDiv = document.getElementById('weekTable');
+    const weekdays = ['周一', '周二', '周三', '周四', '周五'];
+    const timeslots = ['AM1', 'AM2', 'AM3', 'AM4', 'PM1', 'PM2', 'PM3', 'PM4'];
+
+    function render(items) {
+      if (!Array.isArray(items) || items.length === 0) {
+        listDiv.innerHTML = '<p>暂无安排</p>';
+        return;
+      }
+      const html = items.map(it => {
+        return `<div style="padding:6px;border:1px solid #ccc;margin:6px 0;">
+          <div><b>时段</b>：${it.timeslot}</div>
+          <div><b>患者姓名</b>：${it.patientName}</div>
+          <div><b>身份证</b>：${it.patientIdCard}</div>
+          <div><b>手机号</b>：${it.patientPhone}</div>
+          <div><b>年龄</b>：${it.patientAge ?? ''}</div>
+          <div><b>性别</b>：${it.patientGender}</div>
+        </div>`;
+      }).join('');
+      listDiv.innerHTML = html;
+    }
+
+    queryBtn.addEventListener('click', async () => {
+      const weekday = Number(weekdaySelect.value);
+      try {
+        const resp = await fetch(`/api/doctor/schedule?doctorId=${encodeURIComponent(authInfo.doctorId)}&weekday=${weekday}`);
+        const data = await resp.json();
+        render(data);
+      } catch (e) {
+        listDiv.textContent = '请求失败：' + e;
+      }
+    });
+
+    function renderWeekTable(items) {
+      // 建立 map：timeslot-weekday -> department
+      const map = {};
+      (items || []).forEach(it => {
+        const key = `${it.timeslot}-${it.weekday}`;
+        map[key] = it.department || '';
+      });
+
+      let html = '<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;text-align:center;">';
+      html += '<thead><tr>' + weekdays.map(w => `<th>${w}</th>`).join('') + '</tr></thead>';
+      html += '<tbody>';
+      timeslots.forEach(ts => {
+        html += '<tr>';
+        weekdays.forEach((_, idx) => {
+          const key = `${ts}-${idx + 1}`;
+          const dept = map[key] || '—';
+          html += `<td><div><strong>${ts}</strong></div><div>${dept}</div></td>`;
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      weekTableDiv.innerHTML = html;
+    }
+
+    async function loadWeekSchedule() {
+      try {
+        const resp = await fetch(`/api/doctor/week-schedule?doctorId=${encodeURIComponent(authInfo.doctorId)}`);
+        const data = await resp.json();
+        renderWeekTable(data);
+      } catch (e) {
+        weekTableDiv.textContent = '加载失败：' + e;
+      }
+    }
+
+    refreshWeekBtn.addEventListener('click', loadWeekSchedule);
+    // 页面加载时自动拉取一次本周排班
+    loadWeekSchedule();
+  </script>
 </body>
 </html>
-

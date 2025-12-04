@@ -121,12 +121,12 @@ psql
 
 ```sql
 CREATE TABLE app_user (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL,     -- 'PATIENT' / 'DOCTOR' / 'ADMIN'
-    created_at TIMESTAMP DEFAULT NOW(),
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
+                          id SERIAL PRIMARY KEY,
+                          username VARCHAR(100) UNIQUE NOT NULL,
+                          password VARCHAR(255) NOT NULL,
+                          role VARCHAR(20) NOT NULL,     -- 'PATIENT' / 'DOCTOR' / 'ADMIN'
+                          created_at TIMESTAMP DEFAULT NOW(),
+                          is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 ```
 
@@ -134,15 +134,15 @@ CREATE TABLE app_user (
 
 ```sql
 CREATE TABLE patient_profile (
-    id SERIAL PRIMARY KEY,
-    user_id INT UNIQUE NOT NULL REFERENCES app_user(id),
+                                 id SERIAL PRIMARY KEY,
+                                 user_id INT UNIQUE NOT NULL REFERENCES app_user(id),
 
-    id_card VARCHAR(18) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    phone_number VARCHAR(15) NOT NULL UNIQUE,
-    age INT,
-    gender gender_enum NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
+                                 id_card VARCHAR(18) UNIQUE NOT NULL,
+                                 name VARCHAR(100) NOT NULL,
+                                 phone_number VARCHAR(15) NOT NULL UNIQUE,
+                                 age INT,
+                                 gender VARCHAR(10) NOT NULL CHECK (gender IN ('male','female')),
+                                 is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 ```
 
@@ -150,17 +150,17 @@ CREATE TABLE patient_profile (
 
 ```sql
 CREATE TABLE doctor_profile (
-    id SERIAL PRIMARY KEY,
-    user_id INT UNIQUE NOT NULL REFERENCES app_user(id),
+                                id SERIAL PRIMARY KEY,
+                                user_id INT UNIQUE NOT NULL REFERENCES app_user(id),
 
-    doctor_id VARCHAR(10) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    age INT,
-    gender gender_enum NOT NULL,
-    title VARCHAR(100),
+                                doctor_id VARCHAR(10) UNIQUE NOT NULL,
+                                name VARCHAR(100) NOT NULL,
+                                age INT,
+                                gender VARCHAR(10) NOT NULL CHECK (gender IN ('male','female')),
+                                title VARCHAR(100),
 
-    department_id INT REFERENCES department(id),
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
+                                department_id INT REFERENCES department(id),
+                                is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 ```
 
@@ -197,28 +197,21 @@ CREATE TABLE doctor_disease (
 ```
 
 时间槽
-
-```sql
-CREATE TYPE time_slot AS ENUM (
-    'AM1', 'AM2', 'AM3', 'AM4',
-    'PM1', 'PM2', 'PM3', 'PM4'
-);
-```
+有一个而时间槽的概念，我们将他使用varchar定义，使用check规范。
 
 挂号表
 
 ```sql
 CREATE TABLE patient_doctor_registration (
-    id SERIAL PRIMARY KEY,
-    patient_profile_id INT NOT NULL REFERENCES patient_profile(id),
-    doctor_profile_id INT NOT NULL REFERENCES doctor_profile(id),
+                                             id SERIAL PRIMARY KEY,
+                                             patient_profile_id INT REFERENCES patient_profile(id),
+                                             doctor_profile_id INT REFERENCES doctor_profile(id),
+                                             disease_id INT REFERENCES disease(id),
 
-    disease_id INT NOT NULL REFERENCES disease(id), -- 🔁 换成挂具体“疾病”
-    weekday INT NOT NULL CHECK (weekday BETWEEN 1 AND 5),
-    timeslot time_slot NOT NULL,
-
-    registration_time TIMESTAMP NOT NULL DEFAULT NOW(),
-    status VARCHAR(20) NOT NULL
+                                             weekday INT NOT NULL CHECK (weekday BETWEEN 1 AND 5),
+                                             timeslot VARCHAR(4) NOT NULL CHECK (timeslot IN ('AM1','AM2','AM3','AM4','PM1','PM2','PM3','PM4')),
+                                             registration_time TIMESTAMP NOT NULL DEFAULT NOW(),
+                                             status VARCHAR(20) NOT NULL
 );
 ```
 
@@ -226,18 +219,17 @@ doctor_department_schedule // 医生-科室-排班表（科室值班表）
 
 ```sql
 CREATE TABLE doctor_department_schedule (
-    id SERIAL PRIMARY KEY,
-    doctor_profile_id INT REFERENCES doctor_profile(id),
-    department_id INT REFERENCES department(id),
-    weekday INT NOT NULL CHECK (weekday BETWEEN 1 AND 5),
-    timeslot time_slot NOT NULL,
-    
-    UNIQUE (doctor_profile_id, weekday, timeslot)
+                                            id SERIAL PRIMARY KEY,
+                                            doctor_profile_id INT REFERENCES doctor_profile(id),
+                                            department_id INT REFERENCES department(id),
+                                            weekday INT NOT NULL CHECK (weekday BETWEEN 1 AND 5),
+                                            timeslot VARCHAR(4) NOT NULL CHECK (timeslot IN ('AM1','AM2','AM3','AM4','PM1','PM2','PM3','PM4')),
+
+                                            UNIQUE (doctor_profile_id, weekday, timeslot)
 );
 ```
 
 ---
-CREATE TYPE gender_enum AS ENUM ('male', 'female');
 
 ![ER图](./resources/img/ER图-test.png)
 <img width="4723" height="2118" alt="ER图1" src="https://github.com/user-attachments/assets/56362bb8-5250-428c-af5e-f72b7ebed424" />
@@ -279,6 +271,8 @@ CREATE TYPE gender_enum AS ENUM ('male', 'female');
 
 按照最小分支来说entity分支到这里就应该结束了，但是我为了知道这个分支是可用的，所以这里会写一个登陆界面尝试验证。
 
+我们密码的处理了逻辑是 SHA-256（明文 + SALT） 
+
 ---
 
 最新进展 2025-12-3
@@ -296,3 +290,18 @@ CREATE TYPE gender_enum AS ENUM ('male', 'female');
 - [x] 不同用户的登陆逻辑实现
 - [x] 加盐哈希的密码存储和校验过程
 - [ ] 分工
+
+管理员功能
+1、目前已实现病人管理功能，实现了病人的增删查改
+（1）DTO           
+               PatientDTO（患者信息传输）
+               PatientQueryDTO（患者查询条件）
+（2）业务逻辑层
+               BusinessException 业务异常类（自定义）
+               PatientManagementService 接口
+               PatientManagementServiceImpl 实现类
+（3）接口层
+               AdminPatientController
+
+
+main-分支push测试

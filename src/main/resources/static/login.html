@@ -32,6 +32,8 @@
                 return;
             }
             const data = await resp.json();
+            // 将登录信息放入会话存储，医生页面可直接读取 userId/doctorId
+            sessionStorage.setItem('authInfo', JSON.stringify(data));
             document.getElementById('result').textContent = '登录成功! 正在跳转...';
             // 根据角色跳转到不同的页面
             const role = (data.role || '').toUpperCase();

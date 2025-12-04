@@ -2,6 +2,7 @@ package com.hospital.ouc.registrationsystem.domain.repository;
 
 import com.hospital.ouc.registrationsystem.domain.entity.AppUser;
 import org.springframework.data.jpa.repository.JpaRepository;
+import com.hospital.ouc.registrationsystem.domain.enums.Role;
 
 import java.util.Optional;
 
@@ -10,5 +11,6 @@ import java.util.Optional;
  */
 public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     Optional<AppUser> findByUsername(String username);
+    Optional<AppUser> findByIdAndRoleAndIsActiveTrue(Long id, Role role);
 }
 
