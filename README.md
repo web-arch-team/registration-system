@@ -32,8 +32,6 @@
 
 - RESTful API
 
-三端登录（patient / doctor / admin）
-
 ## 项目环境要求
 
 - JDK 21
@@ -305,3 +303,120 @@ CREATE TABLE doctor_department_schedule (
 
 
 main-分支push测试
+
+---
+
+# 前端开发规划
+
+> 前端采用独立的 `frontend` 子项目，基于 Vue3 + Vite + ElementPlus + Vue Router + Pinia + Axios，与后端通过 RESTful API 通信。
+
+## 前端工程结构
+
+在项目根目录下新增了 `frontend/` 目录，主要结构如下：
+
+- `frontend/package.json`：前端依赖与脚本定义
+- `frontend/vite.config.ts`：Vite 配置，已将 `/api` 代理到 `http://localhost:8080`
+- `frontend/index.html`：入口 HTML
+- `frontend/tsconfig.json`：TypeScript 配置
+- `frontend/src/main.ts`：入口文件，挂载 Vue 应用，注册 Pinia、Router、ElementPlus
+- `frontend/src/App.vue`：顶层组件，使用 `<router-view />` 承载页面
+- `frontend/src/router/`：前端路由
+  - `index.ts`：定义登录页、管理员/医生/病人三套布局及其子路由
+- `frontend/src/views/`
+  - `LoginView.vue`：统一登录页面（根据后端返回的角色跳转三端）
+  - `admin/AdminLayout.vue`：管理员布局（左侧菜单 + 顶部标题 + 内容区）
+  - `admin/PatientManagementView.vue`：病人管理页面（示例占位，后续对接后端 CRUD 接口）
+  - `doctor/DoctorLayout.vue`：医生端布局
+  - `doctor/DoctorScheduleView.vue`：医生查看个人排班（TODO）
+  - `doctor/DoctorTodayTodoView.vue`：医生查看今日待诊病人（TODO）
+  - `patient/PatientLayout.vue`：病人端布局
+  - `patient/PatientRegisterView.vue`：病人注册页面（TODO）
+  - `patient/PatientBookingView.vue`：病人挂号页面（TODO）
+
+## 前端运行方式
+
+在项目根目录下：
+
+1. 安装前端依赖
+
+```bash
+cd frontend
+npm install
+```
+
+2. 启动前端开发服务器（默认端口 5173）
+
+```bash
+npm run dev
+```
+
+此时：
+
+- 后端 Spring Boot 应用在 `http://localhost:8080` 运行；
+- 前端在 `http://localhost:5173` 运行；
+- 所有以 `/api` 开头的前端请求会被 Vite 代理到后端（去掉 `/api` 前缀），方便开发时跨域访问。
+
+## 前端 TODO 列表
+
+按你的业务设想，前端可以分阶段实现：
+
+### 通用 & 基础设施
+- [x] 初始化 Vue3 + Vite + TypeScript 项目结构
+- [x] 集成 ElementPlus 组件库
+- [x] 集成 Vue Router，划分三端路由结构（管理员 / 医生 / 病人）
+- [x] 集成 Pinia 状态管理（后续可用于存储当前登录用户信息、Token 等）
+- [x] 配置 Axios + `/api` 代理，方便统一调用后端接口
+- [ ] 全局错误提示与登录态失效处理（如 401 自动跳转登录页）
+
+### 认证与账号
+- [x] 统一登录页面 `LoginView` 框架
+- [ ] 根据后端实际登录接口（`AuthController`）对接统一登录：
+  - 向后端发送用户名+密码
+  - 根据返回的角色（PATIENT / DOCTOR / ADMIN）存入 Pinia
+  - 根据角色跳转 `/admin` / `/doctor` / `/patient` 对应首页
+- [ ] 病人注册页面：
+  - 采集身份证号、姓名、性别、年龄、手机号等
+  - 调用后端接口创建 `app_user` + `patient_profile`
+
+### 管理员端
+- [x] 管理员布局 `AdminLayout`（左侧菜单 + 顶部标题 + 内容区）
+- [ ] 病人管理页面 `PatientManagementView`：
+  - 列表展示患者（分页、按条件查询：姓名、手机号、是否激活等）
+  - 新增患者（表单弹窗）
+  - 编辑患者基本信息
+  - 软删除患者（调用后端将 `is_active=false`）
+- [ ] 医生管理页面：
+  - 列表展示医生
+  - 新增医生账号 + 档案
+  - 修改科室、可诊断疾病
+  - 软删除医生
+- [ ] 排班管理页面：
+  - 选择科室
+  - 查看这一周（weekday 1–5 × TimeSlot）的排班表
+  - 为医生新增 / 调整 / 取消排班（对应修改 `doctor_department_schedule`）
+
+### 医生端
+- [x] 医生布局 `DoctorLayout`
+- [ ] 今日待诊页面 `DoctorTodayTodoView`：
+  - 查询今天的所有挂号记录（`patient_doctor_registration`）
+  - 展示病人档案信息
+- [ ] 我的排班页面 `DoctorScheduleView`：
+  - 展示当前医生一周排班情况（基于 `doctor_department_schedule`）
+
+### 病人端
+- [x] 病人布局 `PatientLayout`
+- [ ] 注册页面 `PatientRegisterView`（见上“认证与账号”）
+- [ ] 挂号页面 `PatientBookingView`：完整流程：
+  1. 选择科室（内科 / 外科）
+  2. 根据科室展示可选疾病列表
+  3. 选择疾病后，查询本周排班（weekday + timeslot + 对应医生）
+  4. 选择医生 + 时间段
+  5. 提交挂号请求（创建 `patient_doctor_registration` 记录）
+  6. 挂号成功后展示确认信息 / 号单
+- [ ] 病人查看自己的挂号记录（历史、当前状态）
+
+### 后续可选优化
+- [ ] 统一的 UI 风格与布局（头部导航、面包屑等）
+- [ ] 将接口地址、角色常量等封装到统一的配置 / 常量文件
+- [ ] 简单国际化（中英文切换）
+- [ ] 更细致的表单校验与用户体验优化（loading、空状态提示等）
