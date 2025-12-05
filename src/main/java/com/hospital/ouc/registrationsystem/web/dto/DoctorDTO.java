@@ -48,6 +48,6 @@ public class DoctorDTO {
     // 是否在职/可用
     private boolean isActive;
 
-    // 该医生可诊断的疾病ID列表（admin 维护）
+    // 该医生可诊断的疾病ID列表
     private List<Long> diseaseIds;
 }
