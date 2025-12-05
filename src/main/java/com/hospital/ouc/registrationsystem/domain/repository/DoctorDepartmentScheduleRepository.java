@@ -5,6 +5,7 @@ import com.hospital.ouc.registrationsystem.domain.enums.TimeSlot;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface DoctorDepartmentScheduleRepository extends JpaRepository<DoctorDepartmentSchedule, Long> {
     /**
@@ -26,4 +27,16 @@ public interface DoctorDepartmentScheduleRepository extends JpaRepository<Doctor
 
     // 根据医生ID列表 + 星期 查询排班
     List<DoctorDepartmentSchedule> findByDoctorProfileIdInAndWeekday(List<Long> doctorIds, Integer weekday);
+
+    /**
+     * 根据医生ID、星期、时间段查询排班（用于唯一约束校验）
+     */
+    Optional<DoctorDepartmentSchedule> findByDoctorProfileIdAndWeekdayAndTimeslot(
+            Long doctorProfileId,
+            Integer weekday,
+            TimeSlot timeslot
+    );
+
+    void deleteByDepartmentIdAndDoctorProfileId(Long departmentId, Long doctorProfileId);
+    void deleteByDepartmentId(Long departmentId);
 }

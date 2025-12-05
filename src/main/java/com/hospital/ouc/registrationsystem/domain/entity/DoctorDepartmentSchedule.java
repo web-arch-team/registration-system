@@ -63,6 +63,6 @@ public class DoctorDepartmentSchedule {
     /**
      * 每个时段最大可挂号数（可为空，空表示用全局默认）
      */
-    @Column(name = "max_patients_per_slot")
-    private Integer maxPatientsPerSlot;
+    @Column(name = "max_patients_per_slot", nullable = false)
+    private Integer maxPatientsPerSlot = 2;
 }
