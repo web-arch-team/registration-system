@@ -12,7 +12,9 @@ export interface Doctor {
   departmentId: number;
   departmentName?: string;
   diseaseIds?: number[];
+  // 后端序列化中可能为 `active` 或 `isActive`，都接收
   isActive?: boolean;
+  active?: boolean;
 }
 
 export interface Department {
@@ -28,8 +30,35 @@ export interface Disease {
   departmentId: number;
 }
 
+export interface PageResult<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number; // current page (0-based)
+  size: number;
+}
+
+export interface DoctorSearchParams {
+  id?: number;
+  doctorId?: string;
+  name?: string;
+  gender?: string;
+  title?: string;
+  departmentId?: number;
+  deleted?: boolean;
+  page?: number;
+  size?: number;
+  sort?: string;
+}
+
 export async function fetchDoctors() {
   const { data } = await http.get<Doctor[]>('/admin/doctors');
+  return data;
+}
+
+// 新：支持分页和查询参数
+export async function searchDoctors(params: DoctorSearchParams) {
+  const { data } = await http.get<PageResult<Doctor>>('/admin/doctors', { params });
   return data;
 }
 

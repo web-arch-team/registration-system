@@ -3,6 +3,11 @@ package com.hospital.ouc.registrationsystem.web;
 import com.hospital.ouc.registrationsystem.domain.service.Admin_DoctorService;
 import com.hospital.ouc.registrationsystem.web.dto.DoctorDTO;
 import com.hospital.ouc.registrationsystem.web.dto.DoctorUpdateDTO;
+import com.hospital.ouc.registrationsystem.web.dto.DoctorSearchCriteria;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,10 +24,35 @@ public class AdminDoctorController {
 
     private final Admin_DoctorService doctorService;
 
-    // 获取所有医生
+    // 获取/查询医生（支持分页与筛选）
     @GetMapping
-    public ResponseEntity<List<DoctorDTO>> getAllDoctors() {
-        return ResponseEntity.ok(doctorService.getAllDoctors());
+    public ResponseEntity<Page<DoctorDTO>> searchDoctors(
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String doctorId,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Boolean deleted,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id,desc") String sort
+    ) {
+        DoctorSearchCriteria criteria = new DoctorSearchCriteria();
+        criteria.setId(id);
+        criteria.setDoctorId(doctorId);
+        criteria.setName(name);
+        criteria.setGender(gender);
+        criteria.setTitle(title);
+        criteria.setDepartmentId(departmentId);
+        criteria.setDeleted(deleted);
+
+        // parse sort like "id,desc" or "name,asc"
+        String[] sortParts = sort.split(",");
+        Sort s = Sort.by(Sort.Direction.fromString(sortParts.length > 1 ? sortParts[1] : "desc"), sortParts[0]);
+        Pageable pageable = PageRequest.of(page, size, s);
+
+        return ResponseEntity.ok(doctorService.searchDoctors(criteria, pageable));
     }
 
     // 根据ID获取医生

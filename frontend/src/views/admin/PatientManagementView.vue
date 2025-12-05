@@ -110,6 +110,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import {
   fetchPatients,
+  fetchPatient,
   createPatient,
   updatePatient,
   deletePatient,
@@ -181,7 +182,7 @@ async function load() {
       query.pageNum = data.number + 1;
     }
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.message || '加载失败');
+    ElMessage.error(getErrorMessage(error) || '加载失败');
   } finally {
     loading.value = false;
   }
@@ -207,8 +208,18 @@ function openCreate() {
   dialogVisible.value = true;
 }
 
-function openEdit(row: Patient) {
-  Object.assign(form, row);
+async function openEdit(row: Patient) {
+  // fetch fresh data from server to ensure we have latest isActive and ids
+  try {
+    loading.value = true;
+    const fresh = await fetchPatient((row as any).id as number);
+    Object.assign(form, fresh as any);
+  } catch (err: any) {
+    ElMessage.error(getErrorMessage(err) || '加载患者失败');
+    return;
+  } finally {
+    loading.value = false;
+  }
   dialogVisible.value = true;
 }
 
@@ -219,8 +230,11 @@ async function onSubmit() {
   saving.value = true;
   try {
     if (isEdit.value && form.id) {
-      await updatePatient(form.id, form);
+      const updated = await updatePatient(form.id, form);
       ElMessage.success('更新成功');
+      // update local list if present
+      const idx = patients.value.findIndex((p) => p.id === form.id);
+      if (idx !== -1) patients.value.splice(idx, 1, updated);
     } else {
       await createPatient(form);
       ElMessage.success('创建成功');
@@ -228,7 +242,7 @@ async function onSubmit() {
     dialogVisible.value = false;
     load();
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.message || '操作失败');
+    ElMessage.error(getErrorMessage(error) || '操作失败');
   } finally {
     saving.value = false;
   }
@@ -244,8 +258,18 @@ async function onDelete(row: Patient) {
     }
     load();
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.message || '删除失败');
+    ElMessage.error(getErrorMessage(error) || '删除失败');
   }
+}
+
+// Helper: extract best available error message from axios/other errors
+function getErrorMessage(error: any) {
+  if (!error) return undefined;
+  // axios response { data: { message: ... } }
+  if (error.response && error.response.data) {
+    return error.response.data.message || error.response.data.error || JSON.stringify(error.response.data);
+  }
+  return error.message || String(error);
 }
 
 onMounted(load);

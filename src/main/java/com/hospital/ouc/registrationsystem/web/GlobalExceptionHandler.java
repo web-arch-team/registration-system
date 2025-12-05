@@ -18,8 +18,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntime(RuntimeException ex) {
         Map<String, Object> body = new HashMap<>();
-        body.put("error", ex.getMessage());
+        // return as { message: "..." } to match frontend expectations
+        body.put("message", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 }
-

@@ -27,6 +27,21 @@ const routes: RouteRecordRaw[] = [
         name: 'admin-doctors',
         component: () => import('@/views/admin/DoctorManagementView.vue'),
       },
+      {
+        path: 'departments',
+        name: 'admin-departments',
+        component: () => import('@/views/admin/DepartmentManagementView.vue'),
+      },
+      {
+        path: 'department-diseases',
+        name: 'admin-department-diseases',
+        component: () => import('@/views/admin/DepartmentDiseaseManagementView.vue'),
+      },
+      {
+        path: 'schedules',
+        name: 'admin-schedules',
+        component: () => import('@/views/admin/ScheduleManagementView.vue'),
+      },
     ],
   },
   {

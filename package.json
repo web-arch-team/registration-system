@@ -1,0 +1,11 @@
+{
+  "name": "registration-system-root",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "install-frontend": "npm --prefix frontend install",
+    "lint-frontend": "npm --prefix frontend run lint"
+  }
+}
+

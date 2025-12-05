@@ -6,6 +6,11 @@ import com.hospital.ouc.registrationsystem.domain.enums.Role;
 import com.hospital.ouc.registrationsystem.domain.repository.*;
 import com.hospital.ouc.registrationsystem.web.dto.DoctorDTO;
 import com.hospital.ouc.registrationsystem.web.dto.DoctorUpdateDTO;
+import com.hospital.ouc.registrationsystem.web.dto.DoctorSearchCriteria;
+import com.hospital.ouc.registrationsystem.domain.specification.DoctorProfileSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -243,5 +248,14 @@ public class Admin_DoctorService {
         } catch (Exception e) {
             throw new RuntimeException("密码加密失败", e);
         }
+    }
+
+    // 新增：按条件分页查询医生（管理员使用）
+    public Page<DoctorDTO> searchDoctors(DoctorSearchCriteria criteria, Pageable pageable) {
+        // 构建 Specification
+        var spec = DoctorProfileSpecification.build(criteria);
+        var page = doctorProfileRepository.findAll(spec, pageable);
+        List<DoctorDTO> dtoList = page.getContent().stream().map(this::convertToDTO).collect(Collectors.toList());
+        return new PageImpl<>(dtoList, pageable, page.getTotalElements());
     }
 }

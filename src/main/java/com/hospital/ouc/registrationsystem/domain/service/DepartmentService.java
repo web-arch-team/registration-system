@@ -5,6 +5,7 @@ import com.hospital.ouc.registrationsystem.domain.entity.Disease;
 import com.hospital.ouc.registrationsystem.domain.repository.DepartmentRepository;
 import com.hospital.ouc.registrationsystem.domain.repository.DiseaseRepository;
 import com.hospital.ouc.registrationsystem.web.dto.DepartmentDTO;
+import com.hospital.ouc.registrationsystem.web.dto.DiseaseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,7 +44,23 @@ public class DepartmentService {
                 .build();
 
         Department saved = departmentRepository.save(department);
-        return convertToDTO(saved);
+
+        // 如果前端传入了疾病列表，则在创建科室后批量插入疾病
+        if (dto.getDiseases() != null && !dto.getDiseases().isEmpty()) {
+            List<Disease> toSave = dto.getDiseases().stream().map(d -> {
+                Disease disease = Disease.builder()
+                        .name(d.getName())
+                        .code(d.getCode())
+                        .description(d.getDescription())
+                        .department(saved)
+                        .build();
+                return disease;
+            }).collect(Collectors.toList());
+            diseaseRepository.saveAll(toSave);
+        }
+
+        // 返回包含疾病列表的 DTO
+        return convertToDTO(departmentRepository.findById(saved.getId()).orElse(saved));
     }
 
     @Transactional
@@ -59,6 +76,28 @@ public class DepartmentService {
 
         department.setDepartmentName(dto.getDepartmentName());
         Department updated = departmentRepository.save(department);
+
+        // 可选：如果前端提供 diseases，则更新该科室的疾病集合（简单策略：删除旧的再插入新的）
+        if (dto.getDiseases() != null) {
+            // 先删除该科室所有疾病
+            List<Disease> existing = diseaseRepository.findByDepartmentId(id);
+            if (!existing.isEmpty()) {
+                diseaseRepository.deleteAll(existing);
+                diseaseRepository.flush();
+            }
+            // 再插入新的疾病
+            List<Disease> toSave = dto.getDiseases().stream().map(d -> {
+                Disease disease = Disease.builder()
+                        .name(d.getName())
+                        .code(d.getCode())
+                        .description(d.getDescription())
+                        .department(updated)
+                        .build();
+                return disease;
+            }).collect(Collectors.toList());
+            if (!toSave.isEmpty()) diseaseRepository.saveAll(toSave);
+        }
+
         return convertToDTO(updated);
     }
 
@@ -77,6 +116,21 @@ public class DepartmentService {
         DepartmentDTO dto = new DepartmentDTO();
         dto.setId(department.getId());
         dto.setDepartmentName(department.getDepartmentName());
+
+        // 填充该科室的疾病列表
+        List<Disease> diseases = diseaseRepository.findByDepartmentId(department.getId());
+        List<DiseaseDTO> diseaseDTOs = diseases.stream().map(d -> {
+            DiseaseDTO dd = new DiseaseDTO();
+            dd.setId(d.getId());
+            dd.setName(d.getName());
+            dd.setCode(d.getCode());
+            dd.setDescription(d.getDescription());
+            dd.setDepartmentId(d.getDepartment().getId());
+            dd.setDepartmentName(d.getDepartment().getDepartmentName());
+            return dd;
+        }).collect(Collectors.toList());
+        dto.setDiseases(diseaseDTOs);
+
         return dto;
     }
 }

@@ -8,6 +8,48 @@
       <el-button type="primary" @click="openCreate">新增医生</el-button>
     </div>
 
+    <!-- 过滤表单 -->
+    <div style="margin-bottom:12px;">
+      <el-form :inline="true" :model="filters" class="filter-form">
+        <el-form-item label="ID">
+          <el-input v-model.number="filters.id" style="width:120px" />
+        </el-form-item>
+        <el-form-item label="工号">
+          <el-input v-model="filters.doctorId" style="width:140px" />
+        </el-form-item>
+        <el-form-item label="姓名">
+          <el-input v-model="filters.name" style="width:140px" />
+        </el-form-item>
+        <el-form-item label="性别">
+          <el-select v-model="filters.gender" placeholder="全部" style="width:120px">
+            <el-option label="全部" :value="''" />
+            <el-option label="男" value="male" />
+            <el-option label="女" value="female" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="职称">
+          <el-input v-model="filters.title" style="width:160px" />
+        </el-form-item>
+        <el-form-item label="科室">
+          <el-select v-model="filters.departmentId" placeholder="全部" style="width:200px" filterable>
+            <el-option :key="0" label="全部" :value="0" />
+            <el-option v-for="d in departments" :key="d.id" :label="d.departmentName" :value="d.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="已删除">
+          <el-select v-model="filters.deleted" placeholder="全部" style="width:120px">
+            <el-option :label="全部" :value="null" />
+            <el-option label="是" :value="true" />
+            <el-option label="否" :value="false" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="onSearch">查询</el-button>
+          <el-button @click="onReset">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+
     <el-table v-loading="loading" :data="doctors" border>
       <el-table-column prop="id" label="ID" width="70" />
       <el-table-column prop="doctorId" label="工号" width="140" />
@@ -133,6 +175,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import {
   fetchDoctors,
+  searchDoctors,
   createDoctor,
   updateDoctor,
   deleteDoctor,
@@ -181,6 +224,18 @@ const rules: FormRules = {
   departmentId: [{ required: true, message: '请选择科室', trigger: 'change' }],
 };
 
+const paging = reactive({ page: 0, size: 20, total: 0 });
+
+const filters = reactive<any>({
+  id: undefined,
+  doctorId: '',
+  name: '',
+  gender: '',
+  title: '',
+  departmentId: 0,
+  deleted: null,
+});
+
 watch(
   () => form.departmentId,
   async (deptId) => {
@@ -202,7 +257,11 @@ watch(
 async function load() {
   loading.value = true;
   try {
-    [doctors.value, departments.value] = await Promise.all([fetchDoctors(), fetchDepartments()]);
+    const [list, depts] = await Promise.all([searchDoctors({ page: paging.page, size: paging.size }), fetchDepartments()]);
+    // normalize boolean property (backend may use `active` or `isActive`)
+    doctors.value = list.content.map((d: any) => ({ ...d, isActive: typeof d.isActive === 'boolean' ? d.isActive : !!d.active }));
+    paging.total = list.totalElements;
+    departments.value = depts;
   } catch (error: any) {
     ElMessage.error(error?.response?.data?.message || '加载失败');
   } finally {
@@ -258,7 +317,8 @@ async function onSubmit() {
       ElMessage.success('创建成功');
     }
     dialogVisible.value = false;
-    load();
+    // reload with current filters
+    onSearch();
   } catch (error: any) {
     ElMessage.error(error?.response?.data?.message || '操作失败');
   } finally {
@@ -271,10 +331,42 @@ async function onDelete(row: Doctor) {
   try {
     await deleteDoctor(row.id);
     ElMessage.success('已删除');
-    load();
+    onSearch();
   } catch (error: any) {
     ElMessage.error(error?.response?.data?.message || '删除失败');
   }
+}
+
+async function onSearch() {
+  loading.value = true;
+  try {
+    const params: any = {
+      page: paging.page,
+      size: paging.size,
+      sort: 'id,desc',
+    };
+    if (filters.id) params.id = filters.id;
+    if (filters.doctorId) params.doctorId = filters.doctorId;
+    if (filters.name) params.name = filters.name;
+    if (filters.gender) params.gender = filters.gender;
+    if (filters.title) params.title = filters.title;
+    if (filters.departmentId && filters.departmentId !== 0) params.departmentId = filters.departmentId;
+    if (filters.deleted !== null) params.deleted = filters.deleted;
+
+    const res = await searchDoctors(params);
+    doctors.value = res.content.map((d: any) => ({ ...d, isActive: typeof d.isActive === 'boolean' ? d.isActive : !!d.active }));
+    paging.total = res.totalElements;
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.message || '查询失败');
+  } finally {
+    loading.value = false;
+  }
+}
+
+function onReset() {
+  Object.assign(filters, { id: undefined, doctorId: '', name: '', gender: '', title: '', departmentId: 0, deleted: null });
+  paging.page = 0;
+  onSearch();
 }
 
 onMounted(load);

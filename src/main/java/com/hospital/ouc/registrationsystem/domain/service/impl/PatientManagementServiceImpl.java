@@ -143,6 +143,15 @@ public class PatientManagementServiceImpl implements PatientManagementService {
             profile.setGender(patientDTO.getGender());
         }
 
+        // 8. 修改在职/有效状态（传值才处理，未传跳过）
+        if (patientDTO.getIsActive() != null) {
+            profile.setIsActive(patientDTO.getIsActive());
+            if (user != null) {
+                user.setIsActive(patientDTO.getIsActive());
+                appUserRepository.save(user);
+            }
+        }
+
         // 8. 保存修改（仅保存有变更的字段）
         PatientProfile updatedProfile = patientProfileRepository.save(profile);
 

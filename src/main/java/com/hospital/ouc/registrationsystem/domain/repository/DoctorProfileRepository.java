@@ -2,11 +2,12 @@ package com.hospital.ouc.registrationsystem.domain.repository;
 
 import com.hospital.ouc.registrationsystem.domain.entity.DoctorProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface DoctorProfileRepository extends JpaRepository<DoctorProfile, Long> {
+public interface DoctorProfileRepository extends JpaRepository<DoctorProfile, Long>, JpaSpecificationExecutor<DoctorProfile> {
     /**
      * 通过统一用户ID查询医生档案，用于登录后绑定身份。
      */

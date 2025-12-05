@@ -27,18 +27,49 @@
         <el-card shadow="hover">
           <div class="card-title">病人管理</div>
           <p class="card-sub">查询 / 新增 / 编辑 / 停用患者账号</p>
+          <div class="card-actions">
+            <el-button type="primary" size="small" @click="$router.push('/admin/patients')">前往</el-button>
+          </div>
         </el-card>
       </el-col>
+
       <el-col :xs="24" :sm="12" :md="8">
         <el-card shadow="hover">
           <div class="card-title">医生管理</div>
           <p class="card-sub">分配科室、疾病，可随时软删除或恢复</p>
+          <div class="card-actions">
+            <el-button type="primary" size="small" @click="$router.push('/admin/doctors')">前往</el-button>
+          </div>
         </el-card>
       </el-col>
+
+      <el-col :xs="24" :sm="12" :md="8">
+        <el-card shadow="hover">
+          <div class="card-title">科室管理</div>
+          <p class="card-sub">维护科室信息，创建/编辑科室以及关联疾病</p>
+          <div class="card-actions">
+            <el-button type="primary" size="small" @click="$router.push('/admin/departments')">前往</el-button>
+          </div>
+        </el-card>
+      </el-col>
+
+      <el-col :xs="24" :sm="12" :md="8">
+        <el-card shadow="hover">
+          <div class="card-title">科室相关疾病</div>
+          <p class="card-sub">查看/新增/编辑科室下的疾病项，支持按科室筛选</p>
+          <div class="card-actions">
+            <el-button type="primary" size="small" @click="$router.push('/admin/department-diseases')">前往</el-button>
+          </div>
+        </el-card>
+      </el-col>
+
       <el-col :xs="24" :sm="12" :md="8">
         <el-card shadow="hover">
           <div class="card-title">排班管理</div>
-          <p class="card-sub">按 weekday + timeslot 管理一周班表</p>
+          <p class="card-sub">按星期与时间段管理医生排班，支持新增/编辑/删除/清空</p>
+          <div class="card-actions">
+            <el-button type="primary" size="small" @click="$router.push('/admin/schedules')">前往</el-button>
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -116,5 +147,9 @@
 .card-sub {
   margin: 0;
   color: #666;
+}
+
+.card-actions {
+  margin-top: 12px;
 }
 </style>

@@ -56,3 +56,8 @@ export async function updatePatient(id: number, payload: Partial<Patient>) {
 export async function deletePatient(id: number) {
   await http.delete(`/admin/patients/${id}`);
 }
+
+export async function fetchPatient(id: number) {
+  const { data } = await http.get<Patient>(`/admin/patients/${id}`);
+  return data;
+}
