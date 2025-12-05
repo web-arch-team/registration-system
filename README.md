@@ -32,8 +32,6 @@
 
 - RESTful API
 
-三端登录（patient / doctor / admin）
-
 ## 项目环境要求
 
 - JDK 21
@@ -291,4 +289,66 @@ CREATE TABLE doctor_department_schedule (
 - [x] 加盐哈希的密码存储和校验过程
 - [ ] 分工
 
+管理员功能
+1、目前已实现病人管理功能，实现了病人的增删查改
+（1）DTO           
+               PatientDTO（患者信息传输）
+               PatientQueryDTO（患者查询条件）
+（2）业务逻辑层
+               BusinessException 业务异常类（自定义）
+               PatientManagementService 接口
+               PatientManagementServiceImpl 实现类
+（3）接口层
+               AdminPatientController
+
+
 main-分支push测试
+
+---
+
+# 前端开发规划
+
+> 前端采用独立的 `frontend` 子项目，基于 **Vue3 + Vite + ElementPlus + Vue Router + Pinia + Axios**，与后端通过 RESTful API 通信。入口：`frontend/src/main.ts`。
+
+## 工程结构（摘要）
+- `frontend/vite.config.ts`：`/api` 代理到 `http://localhost:8080`，别名 `@ -> src`
+- `frontend/src/router/index.ts`：登录页 + 管理员/医生/患者三端路由
+- `frontend/src/stores/auth.ts`：Pinia，持久化登录用户（含 patientId/doctorId）
+- 主要页面：
+  - `views/LoginView.vue`：统一登录（必须走后端 `/api/auth/login`，已去掉示例直跳）
+  - 管理员：`AdminLayout.vue`，`PatientManagementView.vue`（患者 CRUD，对接 `/api/admin/patients`），`DoctorManagementView.vue`（医生 CRUD，对接 `/api/admin/doctors` 等）
+  - 医生：`DoctorLayout.vue`，`DoctorTodayTodoView.vue`（今日待诊），`DoctorScheduleView.vue`（周排班）
+  - 患者：`PatientLayout.vue`，`PatientRegisterView.vue`（注册 `/api/auth/register`），`PatientBookingView.vue`（挂号排班查询+提交）
+
+## 运行
+```bash
+cd frontend
+npm install
+npm run dev   # 默认 http://localhost:5173
+```
+后端默认 `http://localhost:8080`，前端所有 `/api` 请求自动代理。
+
+## 登录账号（后端初始化）
+- 患者：`patient001 / 123456`
+- 医生：`doc001 / 123456`
+- 管理员：`admin / 123456`
+
+## 挂号相关说明
+- 排班查询：`/api/schedule/disease/{diseaseId}/timetable?weekday=` 返回能诊疗该病的医生在对应科室的排班（含 `currentPatients/maxPatients/available`），患者端以 8×5 表格展示。
+- 挂号提交：`POST /api/registration`，参数 `patientProfileId/doctorProfileId/diseaseId/weekday/timeslot`，后端校验号源并写入 `patient_doctor_registration`（status=PAID）。时段剩余为 0 时前端禁止挂号。
+- 号源上限：默认每时段 2；若 `doctor_department_schedule.max_patients_per_slot` 有值，则用排班的值。
+
+## 数据库（挂号相关）
+- `doctor_department_schedule` 表含 `max_patients_per_slot`（可空，空用默认 2）。
+- 排班剩余号 = 上限 - `patient_doctor_registration` 中 doctorProfileId+weekday+timeslot 且状态 PAID/PENDING/COMPLETED 的记录数。
+
+---
+
+尾注：
+
+如果我来实现这个挂号功能我会如何实现
+
+患者需要选择相应的department，然后就可以选择相应的disease。从而他可以在后端的doctor_disease表中
+查询到对应的医生列表。然后他与 doctor_department_schedule表进行关联查询，查询能够治疗这个疾病的
+医生的排班情况。从而最后他在前端就能拼接出一张8x5的值班表 行代表timeslot，列代表weekday。然后患者
+选择相应的时间段和医生，提交挂号请求。而为了方便查看，患者可以选择星期几，然后查看这一天的排班情况。

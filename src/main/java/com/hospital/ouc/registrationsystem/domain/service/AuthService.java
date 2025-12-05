@@ -67,6 +67,11 @@ public class AuthService {
                     .orElseThrow(() -> new RuntimeException("医生档案不存在"));
             resp.setDoctorId(doctor.getDoctorId());
         }
+        // 绑定患者身份：登录的 PATIENT 携带 patientId，方便挂号
+        if (user.getRole() == Role.PATIENT) {
+            patientProfileRepository.findByUserId(user.getId())
+                    .ifPresent(p -> resp.setPatientId(p.getId()));
+        }
         return resp;
     }
 

@@ -47,6 +47,18 @@ public class PatientScheduleController {
     }
 
     /**
+     * 获取某疾病对应医生的排班（timeslot × weekday）。
+     * weekday 可选，不传则返回一周排班；传 1-5 则仅返回该日。
+     */
+    @GetMapping("/disease/{diseaseId}/timetable")
+    public ResponseEntity<List<DiseaseTimetableItemDTO>> getDiseaseTimetable(
+            @PathVariable Long diseaseId,
+            @RequestParam(required = false) Integer weekday) {
+        List<DiseaseTimetableItemDTO> items = scheduleService.getDiseaseTimetable(diseaseId, weekday);
+        return ResponseEntity.ok(items);
+    }
+
+    /**
      * 根据医生ID获取排班
      */
     @GetMapping("/doctor/{doctorId}/schedules")

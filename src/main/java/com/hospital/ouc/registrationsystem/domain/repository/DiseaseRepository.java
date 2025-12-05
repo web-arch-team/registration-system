@@ -2,6 +2,7 @@ package com.hospital.ouc.registrationsystem.domain.repository;
 
 import com.hospital.ouc.registrationsystem.domain.entity.Disease;
 import org.springframework.data.jpa.repository.JpaRepository;
+
 import java.util.List;
 
 public interface DiseaseRepository extends JpaRepository<Disease, Long> {

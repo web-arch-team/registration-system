@@ -18,4 +18,8 @@ public class LoginResponse {
      * 当角色为 DOCTOR 时返回医生工号，便于前端自动绑定医生身份。
      */
     private String doctorId;
+    /**
+     * 当角色为 PATIENT 时返回患者档案ID，便于前端挂号。
+     */
+    private Long patientId;
 }

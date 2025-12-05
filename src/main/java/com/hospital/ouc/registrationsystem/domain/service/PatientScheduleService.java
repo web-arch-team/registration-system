@@ -4,6 +4,7 @@ import com.hospital.ouc.registrationsystem.domain.entity.*;
 import com.hospital.ouc.registrationsystem.domain.repository.*;
 import com.hospital.ouc.registrationsystem.web.dto.*;
 import com.hospital.ouc.registrationsystem.domain.enums.TimeSlot;
+import com.hospital.ouc.registrationsystem.domain.enums.RegistrationStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,18 +20,23 @@ public class PatientScheduleService {
     private final DoctorProfileRepository doctorProfileRepository;
     private final DoctorDiseaseRepository doctorDiseaseRepository;
     private final DoctorDepartmentScheduleRepository scheduleRepository;
+    private final PatientDoctorRegistrationRepository registrationRepository;
+
+    private static final int DEFAULT_MAX_PER_SLOT = 2; // 默认每时段可挂号数量，可后续做配置
 
     public PatientScheduleService(
             DepartmentRepository departmentRepository,
             DiseaseRepository diseaseRepository,
             DoctorProfileRepository doctorProfileRepository,
             DoctorDiseaseRepository doctorDiseaseRepository,
-            DoctorDepartmentScheduleRepository scheduleRepository) {
+            DoctorDepartmentScheduleRepository scheduleRepository,
+            PatientDoctorRegistrationRepository registrationRepository) {
         this.departmentRepository = departmentRepository;
         this.diseaseRepository = diseaseRepository;
         this.doctorProfileRepository = doctorProfileRepository;
         this.doctorDiseaseRepository = doctorDiseaseRepository;
         this.scheduleRepository = scheduleRepository;
+        this.registrationRepository = registrationRepository;
     }
 
     // 获取所有科室
@@ -55,6 +61,62 @@ public class PatientScheduleService {
                 .map(DoctorDisease::getDoctorProfile)
                 .filter(doctor -> doctor.getIsActive()) // 只返回有效的医生
                 .map(this::convertToDoctorDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取某疾病对应医生在本周的排班（timeslot × weekday 交集）。
+     */
+    public List<DiseaseTimetableItemDTO> getDiseaseTimetable(Long diseaseId, Integer weekday) {
+        Disease disease = diseaseRepository.findById(diseaseId)
+                .orElseThrow(() -> new RuntimeException("疾病不存在"));
+
+        // 能诊疗该疾病的医生
+        List<Long> doctorIds = doctorDiseaseRepository.findByDiseaseId(diseaseId).stream()
+                .map(dd -> dd.getDoctorProfile().getId())
+                .collect(Collectors.toList());
+        if (doctorIds.isEmpty()) {
+            return List.of();
+        }
+
+        // 排班查询：若传 weekday 则仅查该天
+        List<DoctorDepartmentSchedule> schedules;
+        if (weekday != null) {
+            schedules = scheduleRepository.findByDoctorProfileIdInAndWeekday(doctorIds, weekday);
+        } else {
+            schedules = scheduleRepository.findByDoctorProfileIdIn(doctorIds);
+        }
+
+        // 只保留科室匹配当前疾病科室的排班
+        Long deptId = disease.getDepartment().getId();
+        schedules = schedules.stream()
+                .filter(s -> s.getDepartment() != null && deptId.equals(s.getDepartment().getId()))
+                .collect(Collectors.toList());
+
+        return schedules.stream()
+                .map(s -> {
+                    DoctorProfile doc = s.getDoctorProfile();
+                    int max = s.getMaxPatientsPerSlot() != null ? s.getMaxPatientsPerSlot() : DEFAULT_MAX_PER_SLOT;
+                    long current = registrationRepository.countByDoctorProfileIdAndWeekdayAndTimeslotAndStatusIn(
+                            doc.getId(),
+                            s.getWeekday(),
+                            s.getTimeslot(),
+                            java.util.List.of(RegistrationStatus.PAID, RegistrationStatus.PENDING, RegistrationStatus.COMPLETED)
+                    );
+                    DiseaseTimetableItemDTO dto = new DiseaseTimetableItemDTO();
+                    dto.setDoctorProfileId(doc.getId());
+                    dto.setDoctorId(doc.getDoctorId());
+                    dto.setDoctorName(doc.getName());
+                    dto.setDoctorTitle(doc.getTitle());
+                    dto.setDepartmentName(s.getDepartment() == null ? null : s.getDepartment().getDepartmentName());
+                    dto.setWeekday(s.getWeekday());
+                    dto.setTimeslot(s.getTimeslot().name());
+                    dto.setTimeDescription(getTimeDescription(s.getTimeslot()));
+                    dto.setCurrentPatients((int) current);
+                    dto.setMaxPatients(max);
+                    dto.setAvailable(current < max);
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 

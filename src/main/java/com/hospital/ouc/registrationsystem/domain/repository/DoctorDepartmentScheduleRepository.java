@@ -19,4 +19,10 @@ public interface DoctorDepartmentScheduleRepository extends JpaRepository<Doctor
 
     // 根据医生ID和星期查找排班
     List<DoctorDepartmentSchedule> findByDoctorProfileIdAndWeekday(Long doctorId, Integer weekday);
+
+    // 根据医生ID列表查询全部排班
+    List<DoctorDepartmentSchedule> findByDoctorProfileIdIn(List<Long> doctorIds);
+
+    // 根据医生ID列表 + 星期 查询排班
+    List<DoctorDepartmentSchedule> findByDoctorProfileIdInAndWeekday(List<Long> doctorIds, Integer weekday);
 }

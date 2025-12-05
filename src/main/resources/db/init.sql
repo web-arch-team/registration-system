@@ -13,7 +13,7 @@ DROP TABLE IF EXISTS department CASCADE;
 -- ==========================================
 -- Drop ENUM types (统一改为 VARCHAR+CHECK)
 -- ==========================================
-DROP TYPE IF EXISTS gender_enum CASCADE;
+-- DROP TYPE IF EXISTS gender_enum CASCADE;
 DROP TYPE IF EXISTS time_slot CASCADE;
 
 -- ==========================================
@@ -141,6 +141,7 @@ CREATE TABLE doctor_department_schedule (
     department_id INT REFERENCES department(id),
     weekday INT NOT NULL CHECK (weekday BETWEEN 1 AND 5),
     timeslot VARCHAR(4) NOT NULL CHECK (timeslot IN ('AM1','AM2','AM3','AM4','PM1','PM2','PM3','PM4')),
+    max_patients_per_slot INT,
 
     UNIQUE (doctor_profile_id, weekday, timeslot)
 );

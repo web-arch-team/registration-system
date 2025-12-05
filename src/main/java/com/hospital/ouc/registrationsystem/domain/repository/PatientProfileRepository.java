@@ -18,6 +18,9 @@ public interface PatientProfileRepository extends JpaRepository<PatientProfile, 
     //根据ID查询且必须是激活状态
     Optional<PatientProfile> findByIdAndIsActiveTrue(Long id);
 
+    // 根据用户ID查询患者档案
+    Optional<PatientProfile> findByUserId(Long userId);
+
     // 多条件分页查询
     @Query("SELECT p FROM PatientProfile p WHERE " +
             "(:#{#name} IS NULL OR p.name LIKE :#{#name}%) AND " +
@@ -32,4 +35,3 @@ public interface PatientProfileRepository extends JpaRepository<PatientProfile, 
             @Param("gender") Gender gender,
             Pageable pageable);
 }
-
