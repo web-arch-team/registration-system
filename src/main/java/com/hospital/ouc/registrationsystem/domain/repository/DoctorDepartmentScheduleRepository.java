@@ -1,6 +1,7 @@
 package com.hospital.ouc.registrationsystem.domain.repository;
 
 import com.hospital.ouc.registrationsystem.domain.entity.DoctorDepartmentSchedule;
+import com.hospital.ouc.registrationsystem.domain.enums.TimeSlot;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -11,4 +11,6 @@ public interface DiseaseRepository extends JpaRepository<Disease, Long> {
 
     // 根据疾病名称模糊查询
     List<Disease> findByNameContaining(String name);
+
+    boolean existsByCode(String code);
 }
