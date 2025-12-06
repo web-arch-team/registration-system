@@ -7,6 +7,8 @@ import DoctorLayout from '@/views/doctor/DoctorLayout.vue';
 import DoctorHomeView from '@/views/doctor/DoctorHomeView.vue';
 import PatientLayout from '@/views/patient/PatientLayout.vue';
 import PatientHomeView from '@/views/patient/PatientHomeView.vue';
+import DutyScheduleManagement from '@/views/admin/DutyScheduleManagement.vue';
+
 
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/login' },
@@ -42,6 +44,11 @@ const routes: RouteRecordRaw[] = [
         name: 'admin-schedules',
         component: () => import('@/views/admin/ScheduleManagementView.vue'),
       },
+        {
+            path: '/admin/duty-schedule',
+            name: 'AdminDutySchedule',
+            component: () => import('@/views/admin/DutyScheduleManagement.vue'),
+        }
     ],
   },
   {

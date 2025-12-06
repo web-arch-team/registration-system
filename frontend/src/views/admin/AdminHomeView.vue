@@ -72,11 +72,23 @@
           </div>
         </el-card>
       </el-col>
+
+      <el-col :xs="24" :sm="12" :md="8">
+        <el-card shadow="hover">
+          <div class="card-title">值班管理</div>
+          <p class="card-sub">管理科室周六/周日值班安排，分早/中/晚三个时段分配医生</p>
+          <div class="card-actions">
+            <el-button type="primary" size="small" @click="$router.push('/admin/duty-schedule')">前往</el-button>
+          </div>
+        </el-card>
+      </el-col>
+
     </el-row>
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+</script>
 
 <style scoped>
 .page {

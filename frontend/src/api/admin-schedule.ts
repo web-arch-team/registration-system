@@ -60,7 +60,6 @@ export async function batchDeleteScheduleByDept(deptId: number) {
   return data;
 }
 
-// 新：兼容某些浏览器、代理或安全策略不允许 DELETE 请求时使用 POST 清空科室排班
 export async function batchClearScheduleByDept(deptId: number) {
   const { data } = await http.post<ResultDTO<void>>(`/admin/schedule/batch/department/${deptId}/clear`);
   return data;

@@ -146,6 +146,23 @@ CREATE TABLE doctor_department_schedule (
     UNIQUE (doctor_profile_id, weekday, timeslot)
 );
 
+-- 周末值班表（仅周六/周日，分早中晚三个时段）
+-- 周末值班表（仅周六/周日，分早中晚三个时段）
+CREATE TABLE doctor_duty_schedule (
+    id BIGSERIAL PRIMARY KEY,
+    department_id BIGINT NOT NULL,
+    doctor_profile_id BIGINT NOT NULL,
+    weekend_type INT NOT NULL CHECK (weekend_type IN (6, 7)), -- 6=周六，7=周日
+    duty_timeslot VARCHAR(20) NOT NULL CHECK (duty_timeslot IN ('MORNING', 'AFTERNOON', 'NIGHT')), -- 早班/中班/夜班
+    created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- 唯一约束：同一科室、同一周末类型、同一时段只能有一个值班医生
+    UNIQUE (department_id, weekend_type, duty_timeslot),
+    -- 外键关联
+    FOREIGN KEY (department_id) REFERENCES department(id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_profile_id) REFERENCES doctor_profile(id) ON DELETE CASCADE
+);
+
 -- ==========================================
 -- Insert Example Data
 -- ==========================================

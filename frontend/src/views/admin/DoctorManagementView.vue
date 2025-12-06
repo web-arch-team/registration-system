@@ -31,14 +31,14 @@
           <el-input v-model="filters.title" style="width:160px" />
         </el-form-item>
         <el-form-item label="科室">
-          <el-select v-model="filters.departmentId" placeholder="全部" style="width:200px" filterable>
+          <el-select v-model="filters.departmentId" placeholder="全部" filterable clearable style="min-width:260px">
             <el-option :key="0" label="全部" :value="0" />
             <el-option v-for="d in departments" :key="d.id" :label="d.departmentName" :value="d.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="已删除">
           <el-select v-model="filters.deleted" placeholder="全部" style="width:120px">
-            <el-option :label="全部" :value="null" />
+            <el-option label="全部" :value="null" />
             <el-option label="是" :value="true" />
             <el-option label="否" :value="false" />
           </el-select>
@@ -131,7 +131,7 @@
           </el-col>
           <el-col :xs="24" :sm="12">
             <el-form-item label="科室" prop="departmentId">
-              <el-select v-model="form.departmentId" placeholder="请选择科室" filterable>
+              <el-select v-model="form.departmentId" placeholder="请选择科室" filterable clearable style="min-width:260px">
                 <el-option v-for="dept in departments" :key="dept.id" :label="dept.departmentName" :value="dept.id" />
               </el-select>
             </el-form-item>

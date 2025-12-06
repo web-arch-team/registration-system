@@ -15,8 +15,23 @@ export interface Disease {
 }
 
 export async function fetchDepartments() {
-  const { data } = await http.get<Department[]>('/admin/departments');
-  return data;
+  try {
+    const resp = await http.get('/admin/departments');
+    const body = resp.data;
+    // 如果后端直接返回数组
+    if (Array.isArray(body)) {
+      return body as Department[];
+    }
+    // 如果后端返回 ResultDTO 包装形式 { code, data }
+    if (body && Array.isArray(body.data)) {
+      return body.data as Department[];
+    }
+    // 其它情况：返回空数组或抛错
+    return [] as Department[];
+  } catch (err) {
+    console.error('fetchDepartments failed', err);
+    throw err;
+  }
 }
 
 export async function fetchDepartment(id: number) {

@@ -7,7 +7,6 @@ package com.hospital.ouc.registrationsystem.domain.enums;
 public enum TimeSlot {
     AM1, AM2, AM3, AM4,
     PM1, PM2, PM3, PM4;
-
     /**
      * 将String转换为TimeSlot枚举（兼容大小写）
      */
@@ -21,5 +20,10 @@ public enum TimeSlot {
             );
         }
     }
+
 }
+
+
+
+
 

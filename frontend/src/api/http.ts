@@ -4,6 +4,7 @@ import axios from 'axios';
 const http = axios.create({
   baseURL: '/api',
   timeout: 15000,
+  withCredentials: true, // 发送请求时携带 cookie，以支持基于 session 的后端鉴权
 });
 
 export default http;

@@ -9,6 +9,7 @@
         <el-menu-item index="/admin/departments">科室管理</el-menu-item>
         <el-menu-item index="/admin/department-diseases">科室疾病</el-menu-item>
         <el-menu-item index="/admin/schedules">排班管理</el-menu-item>
+        <el-menu-item index="/admin/duty-schedule">值班管理</el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>

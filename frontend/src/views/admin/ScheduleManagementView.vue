@@ -1,12 +1,23 @@
 <template>
-  <div class="schedule-manager">
-    <div class="controls">
-      <el-select v-model="selectedDeptId" placeholder="请选择科室" style="min-width:260px" @change="onDeptChange" clearable>
-        <el-option v-for="d in departments" :key="d.id" :label="d.departmentName" :value="d.id" />
-      </el-select>
-      <el-button type="primary" :disabled="!selectedDeptId" @click="openCreate">新增排班</el-button>
-      <el-button type="danger" :disabled="!selectedDeptId || loading" @click="confirmBatchDelete">清空该科室排班</el-button>
+  <div class="page">
+    <div class="header">
+      <div>
+        <h2>排班管理</h2>
+        <p class="sub">按星期与时间段管理医生排班，支持新增/编辑/删除/清空</p>
+      </div>
     </div>
+
+    <el-form :inline="true" class="filter-form" style="margin: 16px 0;">
+      <el-form-item label="选择科室">
+        <el-select v-model="selectedDeptId" placeholder="请选择科室" filterable clearable style="min-width:260px" @change="onDeptChange">
+          <el-option v-for="d in departments" :key="d.id" :label="d.departmentName" :value="d.id" />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" :disabled="!selectedDeptId" @click="openCreate">新增排班</el-button>
+        <el-button type="danger" :disabled="!selectedDeptId || loading" @click="confirmBatchDelete" style="margin-left:8px">清空科室排班</el-button>
+      </el-form-item>
+    </el-form>
 
     <el-card class="table-card" v-loading="loading">
       <el-table :data="schedules" stripe style="width:100%">
@@ -309,8 +320,9 @@ loadDepartments();
 </script>
 
 <style scoped>
-.schedule-manager { padding: 16px; }
-.controls { display:flex; gap:12px; align-items:center; margin-bottom:12px }
+.page { padding: 12px; }
+.header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px }
+.sub { margin:0; color:#606266 }
 .table-card { padding:12px }
 .empty-note { margin-top:12px; color:#909399 }
 </style>
