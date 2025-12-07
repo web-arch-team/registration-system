@@ -230,9 +230,6 @@ CREATE TABLE doctor_department_schedule (
 ---
 
 ![ER图](./resources/img/ER图-test.png)
-<img width="4723" height="2118" alt="ER图1" src="https://github.com/user-attachments/assets/56362bb8-5250-428c-af5e-f72b7ebed424" />
-
-数据库结构应该是不会再改动的了，请同学帮助我修改一下ER图，谢谢！
 
 # 项目结构
 
