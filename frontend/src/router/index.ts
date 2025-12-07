@@ -67,6 +67,16 @@ const routes: RouteRecordRaw[] = [
         name: 'doctor-today',
         component: () => import('@/views/doctor/DoctorTodayTodoView.vue'),
       },
+      {
+        path: 'my',
+        name: 'doctor-my',
+        component: () => import('@/views/doctor/DoctorMyView.vue'),
+      },
+      {
+        path: 'weekend',
+        name: 'doctor-weekend',
+        component: () => import('@/views/doctor/DoctorWeekendView.vue'),
+      },
     ],
   },
   {

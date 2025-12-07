@@ -23,4 +23,10 @@ public interface DutyScheduleService {
 
     // 新增：查询所有值班记录（用于患者端展示）
     List<DoctorDutySchedule> getAllDutySchedules();
+
+    // 查询某位医生的周末值班记录（周六/周日）
+    List<DoctorDutySchedule> getDutySchedulesByDoctorId(Long doctorProfileId);
+
+    // 新：按可选过滤条件查询值班记录（部门、周末类型、时段）
+    List<DoctorDutySchedule> findByFilters(Long departmentId, Integer weekendType, String dutyTimeslot);
 }

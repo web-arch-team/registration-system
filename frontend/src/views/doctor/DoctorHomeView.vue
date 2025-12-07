@@ -22,7 +22,17 @@
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useAuthStore } from '@/stores/auth';
+import { getDoctorProfileByUserId } from '@/api/doctor-profile';
+
+const auth = useAuthStore();
+
+onMounted(async () => {
+  auth.restore();
+});
+</script>
 
 <style scoped>
 .page {
