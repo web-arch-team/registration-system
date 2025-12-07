@@ -3,6 +3,7 @@
 -- ==========================================
 DROP TABLE IF EXISTS doctor_department_schedule CASCADE;
 DROP TABLE IF EXISTS patient_doctor_registration CASCADE;
+DROP TABLE IF EXISTS doctor_duty_schedule CASCADE;
 DROP TABLE IF EXISTS doctor_disease CASCADE;
 DROP TABLE IF EXISTS disease CASCADE;
 DROP TABLE IF EXISTS doctor_profile CASCADE;
@@ -147,7 +148,6 @@ CREATE TABLE doctor_department_schedule (
 );
 
 -- 周末值班表（仅周六/周日，分早中晚三个时段）
--- 周末值班表（仅周六/周日，分早中晚三个时段）
 CREATE TABLE doctor_duty_schedule (
     id BIGSERIAL PRIMARY KEY,
     department_id BIGINT NOT NULL,
@@ -218,7 +218,7 @@ VALUES (
 );
 
 -- ==========================================
--- DOCTORS (3 examples)
+-- DOCTORS (7 examples)
 -- ==========================================
 
 -- Doctor 1 (Internal Medicine)
@@ -263,6 +263,62 @@ VALUES (
     1  -- Internal Medicine
 );
 
+-- Doctor 4 (Internal Medicine)
+INSERT INTO app_user (username, password, role)
+VALUES ('doc004', encode(digest('123456' || 'OucWebDev123', 'sha256'), 'hex'), 'DOCTOR');
+INSERT INTO doctor_profile (user_id, doctor_id, name, age, gender, title, department_id)
+VALUES (
+           (SELECT id FROM app_user WHERE username='doc004'),
+           '00000004',
+           'Dr. Linda Zhao',
+           38,
+           'female',
+           'Associate Chief Physician',
+           1  -- Internal Medicine
+       );
+
+-- Doctor 5 (Internal Medicine)
+INSERT INTO app_user (username, password, role)
+VALUES ('doc005', encode(digest('123456' || 'OucWebDev123', 'sha256'), 'hex'), 'DOCTOR');
+INSERT INTO doctor_profile (user_id, doctor_id, name, age, gender, title, department_id)
+VALUES (
+           (SELECT id FROM app_user WHERE username='doc005'),
+           '00000005',
+           'Dr. Michael Liu',
+           42,
+           'male',
+           'Attending Physician',
+           1  -- Internal Medicine
+       );
+
+-- Doctor 6 (Surgical)
+INSERT INTO app_user (username, password, role)
+VALUES ('doc006', encode(digest('123456' || 'OucWebDev123', 'sha256'), 'hex'), 'DOCTOR');
+INSERT INTO doctor_profile (user_id, doctor_id, name, age, gender, title, department_id)
+VALUES (
+           (SELECT id FROM app_user WHERE username='doc006'),
+           '00000006',
+           'Dr. Sophia Wu',
+           36,
+           'female',
+           'Surgeon',
+           2  -- Surgical
+       );
+
+-- Doctor 7 (Surgical)
+INSERT INTO app_user (username, password, role)
+VALUES ('doc007', encode(digest('123456' || 'OucWebDev123', 'sha256'), 'hex'), 'DOCTOR');
+INSERT INTO doctor_profile (user_id, doctor_id, name, age, gender, title, department_id)
+VALUES (
+           (SELECT id FROM app_user WHERE username='doc007'),
+           '00000007',
+           'Dr. David Zheng',
+           39,
+           'male',
+           'Surgeon',
+           2  -- Surgical
+       );
+
 -- ==========================================
 -- Map Doctors to Diseases (limit 1~3 per doctor)
 -- ==========================================
@@ -285,6 +341,34 @@ VALUES
 INSERT INTO doctor_disease (doctor_profile_id, disease_id)
 VALUES
     ((SELECT id FROM doctor_profile WHERE doctor_id = '00000003'), (SELECT id FROM disease WHERE code = 'IM-ST'));
+
+-- Doctor 4 -> 3 Internal Medicine diseases: Heart, Spleen, Kidney
+-- （与医生1有重叠：心脏病、肾脏病）
+INSERT INTO doctor_disease (doctor_profile_id, disease_id)
+VALUES
+    ((SELECT id FROM doctor_profile WHERE doctor_id = '00000004'), (SELECT id FROM disease WHERE code = 'IM-HD')),
+    ((SELECT id FROM doctor_profile WHERE doctor_id = '00000004'), (SELECT id FROM disease WHERE code = 'IM-SD')),
+    ((SELECT id FROM doctor_profile WHERE doctor_id = '00000004'), (SELECT id FROM disease WHERE code = 'IM-KD'));
+
+-- Doctor 5 -> 2 Internal Medicine diseases: Liver, Stomach
+-- （与医生1有重叠：肝脏病，与医生3有重叠：胃病）
+INSERT INTO doctor_disease (doctor_profile_id, disease_id)
+VALUES
+    ((SELECT id FROM doctor_profile WHERE doctor_id = '00000005'), (SELECT id FROM disease WHERE code = 'IM-LD')),
+    ((SELECT id FROM doctor_profile WHERE doctor_id = '00000005'), (SELECT id FROM disease WHERE code = 'IM-ST'));
+
+-- Doctor 6 -> 1 Surgical disease: Joint Disease
+-- （单一专长，关节病专家）
+INSERT INTO doctor_disease (doctor_profile_id, disease_id)
+VALUES
+    ((SELECT id FROM doctor_profile WHERE doctor_id = '00000006'), (SELECT id FROM disease WHERE code = 'SU-JD'));
+
+-- Doctor 7 -> 2 Surgical diseases: Plastic Surgery, Burns
+-- （整形外科医生，同时擅长烧伤整形）
+INSERT INTO doctor_disease (doctor_profile_id, disease_id)
+VALUES
+    ((SELECT id FROM doctor_profile WHERE doctor_id = '00000007'), (SELECT id FROM disease WHERE code = 'SU-PS')),
+    ((SELECT id FROM doctor_profile WHERE doctor_id = '00000007'), (SELECT id FROM disease WHERE code = 'SU-BN'));
 
 -- ==========================================
 -- Ensure specific test patient passwords are reset to '123456'
