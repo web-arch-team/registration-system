@@ -26,4 +26,15 @@ public interface DoctorDutyScheduleRepository extends JpaRepository<DoctorDutySc
 
     @Query("SELECT d FROM DoctorDutySchedule d LEFT JOIN FETCH d.department LEFT JOIN FETCH d.doctorProfile WHERE d.department.id = :deptId")
     List<DoctorDutySchedule> findByDepartmentIdWithJoins(@Param("deptId") Long deptId);
+
+    @Query("SELECT d FROM DoctorDutySchedule d LEFT JOIN FETCH d.department LEFT JOIN FETCH d.doctorProfile WHERE d.doctorProfile.id = :doctorId AND (d.weekendType = 6 OR d.weekendType = 7)")
+    List<DoctorDutySchedule> findByDoctorProfileIdWithJoins(@Param("doctorId") Long doctorId);
+
+    @Query("SELECT d FROM DoctorDutySchedule d LEFT JOIN FETCH d.department LEFT JOIN FETCH d.doctorProfile "
+            + "WHERE (:deptId IS NULL OR d.department.id = :deptId) "
+            + "AND (:weekendType IS NULL OR d.weekendType = :weekendType) "
+            + "AND (:dutyTimeslot IS NULL OR d.dutyTimeslot = :dutyTimeslot)")
+    List<DoctorDutySchedule> findByFiltersWithJoins(@Param("deptId") Long deptId,
+                                                   @Param("weekendType") Integer weekendType,
+                                                   @Param("dutyTimeslot") String dutyTimeslot);
 }

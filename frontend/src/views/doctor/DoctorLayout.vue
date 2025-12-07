@@ -3,9 +3,11 @@
     <el-aside width="200px" class="sidebar">
       <div class="brand">Doctor Desk</div>
       <el-menu router :default-active="activeMenu">
-        <el-menu-item index="/doctor/home">欢迎页</el-menu-item>
-        <el-menu-item index="/doctor/today">今日待诊</el-menu-item>
-        <el-menu-item index="/doctor/schedule">我的排班</el-menu-item>
+        <el-menu-item index="/doctor/home" @click="go('/doctor/home')">欢迎页</el-menu-item>
+        <el-menu-item index="/doctor/today" @click="go('/doctor/today')">今日待诊</el-menu-item>
+        <el-menu-item index="/doctor/schedule" @click="go('/doctor/schedule')">我的排班</el-menu-item>
+        <el-menu-item index="/doctor/my" @click="go('/doctor/my')">我的信息</el-menu-item>
+        <el-menu-item index="/doctor/weekend" @click="go('/doctor/weekend')">周末值班</el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>
@@ -28,6 +30,10 @@ const route = useRoute();
 const router = useRouter();
 
 const activeMenu = computed(() => (route.path.startsWith('/doctor') ? route.path : '/doctor/home'));
+
+function go(path: string) {
+  router.push(path);
+}
 
 function goLogin() {
   router.push('/login');

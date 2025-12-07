@@ -23,14 +23,14 @@ public class PatientDutyController {
 
     /** 获取所有值班记录（可选按 departmentId 过滤） */
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<DoctorDutyVO>> list(@RequestParam(required = false) Long departmentId) {
-        List<DoctorDutySchedule> schedules;
-        if (departmentId != null) {
-            schedules = dutyScheduleService.getDutyScheduleByDeptId(departmentId);
-        } else {
-            schedules = dutyScheduleService.getAllDutySchedules();
-        }
-        log.info("Returning {} duty schedules for departmentId={}", schedules.size(), departmentId);
+    public ResponseEntity<List<DoctorDutyVO>> list(@RequestParam(required = false) Long departmentId,
+                                                    @RequestParam(required = false) Integer weekendType,
+                                                    @RequestParam(required = false) String dutyTimeslot) {
+        // debug incoming params
+        log.debug("list called with departmentId={}, weekendType={}, dutyTimeslot={}", departmentId, weekendType, dutyTimeslot);
+        // delegate to service that will perform DB-level filtering
+        List<DoctorDutySchedule> schedules = dutyScheduleService.findByFilters(departmentId, weekendType, dutyTimeslot);
+        log.info("Returning {} duty schedules for departmentId={} weekendType={} dutyTimeslot={}", schedules.size(), departmentId, weekendType, dutyTimeslot);
         // map to VO to avoid exposing JPA entities / lazy loading issues
         List<DoctorDutyVO> vos = schedules.stream().map(d -> {
             DoctorDutyVO v = new DoctorDutyVO();

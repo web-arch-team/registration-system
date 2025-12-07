@@ -36,6 +36,16 @@ public class DutyScheduleServiceImpl implements DutyScheduleService {
     }
 
     @Override
+    public List<DoctorDutySchedule> getDutySchedulesByDoctorId(Long doctorProfileId) {
+        return dutyScheduleRepository.findByDoctorProfileIdWithJoins(doctorProfileId);
+    }
+
+    @Override
+    public List<DoctorDutySchedule> findByFilters(Long departmentId, Integer weekendType, String dutyTimeslot) {
+        return dutyScheduleRepository.findByFiltersWithJoins(departmentId, weekendType, dutyTimeslot);
+    }
+
+    @Override
     @Transactional
     public DoctorDutySchedule addDutySchedule(DutyScheduleDTO dto) {
         // 1. 验证科室存在
