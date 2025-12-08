@@ -128,7 +128,9 @@ class DocumentProcessor:
             
             # Move start position with overlap
             start = end - self.chunk_overlap
-            if start <= 0:
+            if start < 0:
+                start = 0
+            elif start >= end:
                 start = end
         
         return chunks

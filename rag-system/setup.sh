@@ -8,13 +8,13 @@ echo ""
 
 # Check Python version
 echo "Checking Python version..."
-python_version=$(python3 --version 2>&1 | awk '{print $2}')
-echo "Found Python $python_version"
-
 if ! command -v python3 &> /dev/null; then
     echo "Error: Python 3 is not installed"
     exit 1
 fi
+
+python_version=$(python3 --version 2>&1 | awk '{print $2}')
+echo "Found Python $python_version"
 
 # Create virtual environment
 echo ""
