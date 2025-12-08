@@ -1,0 +1,59 @@
+# Privacy-Preserving RAG System Configuration
+
+# Encryption Settings
+encryption:
+  algorithm: "AES-256-GCM"
+  key_derivation: "PBKDF2"
+  iterations: 100000
+  salt_length: 32
+
+# Vector Database Settings
+vector_db:
+  type: "qdrant"
+  host: "localhost"
+  port: 6333
+  collection_name: "encrypted_knowledge_base"
+  vector_size: 384  # for all-MiniLM-L6-v2
+  distance_metric: "cosine"
+
+# Embedding Model Settings
+embedding:
+  model_name: "sentence-transformers/all-MiniLM-L6-v2"
+  max_seq_length: 256
+  batch_size: 32
+  device: "cpu"  # or "cuda" if GPU available
+
+# LLM Settings
+llm:
+  provider: "ollama"
+  model_name: "llama3.2:1b"  # Lightweight 1B parameter model
+  base_url: "http://localhost:11434"
+  temperature: 0.7
+  max_tokens: 512
+  context_window: 2048
+
+# Document Processing
+document:
+  chunk_size: 500
+  chunk_overlap: 50
+  supported_formats: ["pdf", "docx", "txt", "md"]
+
+# Retrieval Settings
+retrieval:
+  top_k: 5
+  similarity_threshold: 0.7
+
+# Audit Settings
+audit:
+  enabled: true
+  log_path: "./logs/audit.log"
+  log_level: "INFO"
+  log_queries: true
+  log_retrievals: true
+  log_generations: false  # Don't log generated content for privacy
+
+# Performance Settings
+performance:
+  enable_caching: true
+  cache_size: 100
+  quantization: "4bit"  # For model quantization

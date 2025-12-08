@@ -21,3 +21,21 @@ npm-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+
+# RAG System
+/rag-system/logs/
+/rag-system/data/vectors/
+/rag-system/data/encrypted/
+/rag-system/.env
+/rag-system/venv/
+
