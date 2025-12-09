@@ -3,9 +3,11 @@ package com.hospital.ouc.registrationsystem.domain.service;
 import com.hospital.ouc.registrationsystem.domain.entity.PatientDoctorRegistration;
 import com.hospital.ouc.registrationsystem.domain.entity.PatientProfile;
 import com.hospital.ouc.registrationsystem.domain.repository.DoctorDepartmentScheduleRepository;
+import com.hospital.ouc.registrationsystem.domain.repository.DoctorProfileRepository;
 import com.hospital.ouc.registrationsystem.domain.repository.PatientDoctorRegistrationRepository;
 import com.hospital.ouc.registrationsystem.web.dto.DoctorDayScheduleItem;
 import com.hospital.ouc.registrationsystem.web.dto.DoctorWeekScheduleItem;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -53,8 +55,19 @@ public class DoctorScheduleService {
     /**
      * 查询医生本周排班（周一到周五，每天 8 个时段）。
      */
+    @Autowired
+    private DoctorProfileRepository doctorProfileRepository;
+
     public List<DoctorWeekScheduleItem> getWeekSchedule(String doctorId) {
-        return scheduleRepository.findByDoctorProfile_DoctorId(doctorId).stream()
+
+        // 1. 先查工号对应的 profileId
+        var profile = doctorProfileRepository.findByDoctorId(doctorId)
+                .orElseThrow(() -> new RuntimeException("医生不存在"));
+        Long profileId = profile.getId();
+
+        // 2. 用 profileId 查询排班
+        return scheduleRepository.findByDoctorProfileId(profileId)
+                .stream()
                 .map(s -> new DoctorWeekScheduleItem(
                         s.getWeekday(),
                         s.getTimeslot().name(),
