@@ -131,7 +131,7 @@
           </el-col>
           <el-col :xs="24" :sm="12">
             <el-form-item label="科室" prop="departmentId">
-              <el-select v-model="form.departmentId" placeholder="请选择科室" filterable clearable style="min-width:260px">
+              <el-select v-model="form.departmentId" placeholder="请选择科室" filterable clearable style="width: 100%">
                 <el-option v-for="dept in departments" :key="dept.id" :label="dept.departmentName" :value="dept.id" />
               </el-select>
             </el-form-item>
@@ -139,18 +139,19 @@
           <el-col :xs="24">
             <el-form-item label="可诊断疾病" prop="diseaseIds">
               <el-select
-                v-model="form.diseaseIds"
-                multiple
-                filterable
-                collapse-tags
-                placeholder="请选择疾病"
-                :disabled="!form.departmentId"
+                  v-model="form.diseaseIds"
+                  multiple
+                  filterable
+                  collapse-tags
+                  placeholder="请选择疾病"
+                  :disabled="!form.departmentId"
+                  style="width: 100%"
               >
                 <el-option
-                  v-for="d in diseases"
-                  :key="d.id"
-                  :label="d.name"
-                  :value="d.id"
+                    v-for="d in diseases"
+                    :key="d.id"
+                    :label="d.name"
+                    :value="d.id"
                 />
               </el-select>
             </el-form-item>
@@ -214,10 +215,10 @@ const dialogTitle = computed(() => (isEdit.value ? '编辑医生' : '新增医�
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur', validator: (_, value, cb) => {
-    if (isEdit.value && !value) return cb();
-    if (!value) return cb(new Error('请输入密码'));
-    cb();
-  } }],
+      if (isEdit.value && !value) return cb();
+      if (!value) return cb(new Error('请输入密码'));
+      cb();
+    } }],
   doctorId: [{ required: true, message: '请输入工号', trigger: 'blur' }],
   name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
   gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
@@ -237,21 +238,21 @@ const filters = reactive<any>({
 });
 
 watch(
-  () => form.departmentId,
-  async (deptId) => {
-    if (!deptId) {
-      diseases.value = [];
-      form.diseaseIds = [];
-      return;
-    }
-    try {
-      diseases.value = await fetchDiseasesByDepartment(deptId);
-      // 如果当前选中的疾病不属于该科室，需清空
-      form.diseaseIds = form.diseaseIds?.filter((id) => diseases.value.some((d) => d.id === id)) || [];
-    } catch (error: any) {
-      ElMessage.error(error?.response?.data?.message || '加载疾病失败');
-    }
-  },
+    () => form.departmentId,
+    async (deptId) => {
+      if (!deptId) {
+        diseases.value = [];
+        form.diseaseIds = [];
+        return;
+      }
+      try {
+        diseases.value = await fetchDiseasesByDepartment(deptId);
+        // 如果当前选中的疾病不属于该科室，需清空
+        form.diseaseIds = form.diseaseIds?.filter((id) => diseases.value.some((d) => d.id === id)) || [];
+      } catch (error: any) {
+        ElMessage.error(error?.response?.data?.message || '加载疾病失败');
+      }
+    },
 );
 
 async function load() {
@@ -293,10 +294,10 @@ function openEdit(row: Doctor) {
   // 预先加载该科室的疾病
   if (row.departmentId) {
     fetchDiseasesByDepartment(row.departmentId)
-      .then((list) => {
-        diseases.value = list;
-      })
-      .catch(() => {});
+        .then((list) => {
+          diseases.value = list;
+        })
+        .catch(() => {});
   }
 }
 

@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage } from 'element-plus';
 import {
   fetchDepartments,
@@ -77,8 +77,8 @@ const dialogVisible = ref(false);
 const formRef = ref();
 const form = reactive<Disease>({ name: '', code: '', description: '', departmentId: undefined });
 
-const isEdit = () => !!(form as any).id;
-const dialogTitle = () => (isEdit() ? '编辑疾病' : '新增疾病');
+const isEdit = ref(false);
+const dialogTitle = computed(() => isEdit.value ? '编辑疾病' : '新增疾病');
 
 async function load() {
   loading.value = true;
@@ -114,11 +114,13 @@ function resetFilter() {
 
 function openCreate() {
   Object.assign(form, { id: undefined, name: '', code: '', description: '', departmentId: selectedDeptId.value } as any);
+  isEdit.value = false;
   dialogVisible.value = true;
 }
 
 function openEdit(row: Disease) {
   Object.assign(form, row as any);
+  isEdit.value = true;
   dialogVisible.value = true;
 }
 
@@ -130,7 +132,7 @@ async function onSubmit() {
       return;
     }
     saving.value = true;
-    if (isEdit()) {
+    if (isEdit.value) {
       await updateDisease((form as any).id, form as any);
       ElMessage.success('更新成功');
     } else {

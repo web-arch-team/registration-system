@@ -140,3 +140,4 @@ SELECT id, department_id, 4, 'PM1' FROM doctor_profile WHERE doctor_id = '000000
 
 INSERT INTO doctor_department_schedule (doctor_profile_id, department_id, weekday, timeslot)
 SELECT id, department_id, 4, 'PM2' FROM doctor_profile WHERE doctor_id = '00000007';
+

@@ -377,3 +377,4 @@ VALUES
 UPDATE app_user
 SET password = encode(digest('123456' || 'OucWebDev123', 'sha256'), 'hex')
 WHERE username IN ('patient001', 'patient002');
+
